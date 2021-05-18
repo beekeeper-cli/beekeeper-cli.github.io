@@ -1,4 +1,4 @@
-const words = ["sale","promotion", "registration", "event"];
+const words = ["sale","promotion", "registration"];
 let i = 0;
 
 const _changeText = () => {
