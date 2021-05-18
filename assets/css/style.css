@@ -1191,7 +1191,7 @@ a:hover {
   -ms-flex-align: center;
   align-items: center;
   border-radius: 100px;
-  background-color: #00f2b1;
+  background-color: #fcbd20;
   color: #fff;
   font-size: 16px;
   text-decoration: none;
@@ -1210,7 +1210,7 @@ a:hover {
 }
 
 .primary-button:hover {
-  background-image: linear-gradient(111deg, #00f2b1, #3ee6e1);
+  background-image: linear-gradient(111deg, #203E5F, #000000);
 }
 
 .button-container {
@@ -1357,7 +1357,7 @@ a:hover {
 }
 
 .link-block:hover {
-  color: #3ee6e1;
+  color: #FFCC00;
 }
 
 .navigation-container {
@@ -1806,6 +1806,7 @@ a:hover {
 
   h2 {
     font-size: 31px;
+    line-height: 40px;
   }
 
   .intro-paragraph {
@@ -1856,6 +1857,7 @@ a:hover {
   }
   h2 {
     font-size: 27px;
+    line-height: 40px;
   }
   h3 {
     font-size: 24px;
