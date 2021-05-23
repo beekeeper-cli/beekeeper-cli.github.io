@@ -640,7 +640,7 @@ label {
 }
 
 .fa-github:hover {
-  color: #3ee6e1;
+  color: #fdcc52;
 }
 
 .diagram {
@@ -1388,7 +1388,7 @@ a:hover {
 }
 
 .brand {
-  max-width: 300px;
+  width: 120px;
 }
 
 .navigation-right {
@@ -1678,7 +1678,7 @@ a:hover {
   }
 
   .template-logo {
-    max-width: 50px;
+    /* max-width: 50px; */
   }
 
   .nav-menu {
