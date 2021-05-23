@@ -36,7 +36,8 @@ body {
   min-height: 100%;
   background-color: white;
   font-family: 'ralewayRegular', Inter, sans-serif;
-  color: #203E5F;
+  color: #1A2634;
+  /* color: #203E5F; */
   line-height: 20px;
 }
 
@@ -121,7 +122,7 @@ figcaption {
   padding: 20px 40px;
   position: fixed;
   bottom: 200px;
-  font-size: 25px;
+  font-size: 1.2rem;
   z-index: 1;
 }
 
@@ -681,6 +682,10 @@ label {
   align-items: center;
 }
 
+.team-member-wrap img {
+  border-radius: 50%;
+}
+
 .team-member-info {
   display: -webkit-box;
   display: -webkit-flex;
@@ -713,7 +718,7 @@ label {
 .team-member-location {
   font-size: 16px;
   text-align: center;
-  color: #b5bbbf;
+  color: #999ea1;
 }
 
 .team-member-icons {
@@ -727,11 +732,12 @@ ul.team-member-icons li {
 
 .team-member-icon {
   margin: 0px 5px;
-  color: #00f2b1;
+  color: #203E5F;
+  word-spacing: 10px;
 }
 
 .team-member-icon:hover {
-  color: #3ee6e1;
+  color: #fdcc52;
 }
 
 /* h1 {
@@ -949,14 +955,14 @@ a:hover {
 }
 
 .white-paragraph {
-  color: #b5bbbf;
+  color: #999ea1;
   font-weight: 400;
   text-align: justify;
 }
 
-.intro-paragraph {
+/* .intro-paragraph {
   margin-top: 40px;
-}
+} */
 
 #intro-paragraph-2 {
   margin-top: 0px;
@@ -969,7 +975,6 @@ a:hover {
 
 #team-paragraph {
   max-width: 565px;
-  display: none;
 }
 
 .white-paragraph.bottom-margin {
@@ -1102,7 +1107,7 @@ a:hover {
   align-items: center;
   border-style: solid;
   border-width: 2px;
-  border-color: #b5bbbf;
+  border-color: #999ea1;
   border-radius: 100%;
   background-color: transparent;
 }
@@ -1148,7 +1153,7 @@ a:hover {
 .tab-link-text {
   position: absolute;
   bottom: -40px;
-  color: #b5bbbf;
+  color: #999ea1;
   text-align: center;
   white-space: nowrap;
 }
@@ -1328,7 +1333,7 @@ a:hover {
 ._404-text {
   max-width: 675px;
   margin-bottom: 40px;
-  color: #b5bbbf;
+  color: #999ea1;
   font-size: 20px;
   line-height: 1.65;
   text-align: center;
@@ -1494,7 +1499,7 @@ a:hover {
 }
 
 .text {
-  color: #b5bbbf;
+  color: #999ea1;
   font-size: 18px;
   line-height: 1.8;
 }
