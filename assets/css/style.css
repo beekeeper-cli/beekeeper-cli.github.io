@@ -621,6 +621,7 @@ label {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent; */
   color: #fdcc52;
+  display: block;
 }
 
 /*#spin:after {
