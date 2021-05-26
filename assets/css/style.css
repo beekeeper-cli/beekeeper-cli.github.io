@@ -357,6 +357,10 @@ label {
   font-size: 20px;
 }
 
+#case-study p strong {
+  font-family: 'rubikMedium';
+}
+
 
 
 @media screen and (max-width: 991px) {

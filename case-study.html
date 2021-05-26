@@ -50,357 +50,132 @@
           <h1 class="h1 centered">Case Study</h1>
         </div>
         <div id="case-study">
-          <h2 class="h2">1 Introduction</h2>
+          <h2 class="h2">1 Introduction and Use Case</h2>
           <p>
-            Your application has secrets. If those secrets leak, you may have to urgently update them and redeploy applications. Leaked secrets can cost you in man-hours, in reputation, and in revenue.
+            Beekeeper is an open-sourced Backend as a Service (BaaS) built to handle bursty traffic from one-off events like a sale or promotion.
           </p>
           <p>
-            Haven is an open-source solution for easily and securely managing those application secrets. Haven abstracts away the complexity of secrets management for
-            software engineers, so they can have the peace of mind to focus on
-            their most important work. In this case study, we describe how we
-            designed and built Haven, along with some of the technical
-            challenges we encountered. But first, let’s start with an overview
-            of secrets.
+            There is a difference between infrastructure needed for normal business activities and infrastructure needed for high traffic one-off events. An abrupt increase in website traffic can be the effect of many different causes. One such cause is an event like a Black Friday sale or similar promotion.  If the existing infrastructure is unprepared for the spike in traffic it may result in a Denial of Service. The desired service may be unavailable until traffic declines to a manageable level.
           </p>
-          <h2>2 Secrets</h2>
-          <h3>2.1 What is a secret?</h3>
+          <h3>1.1 Hypothetical</h3>
           <p>
-            A secret is something you want to keep <em>secret</em>. More
-            specifically, it's a sensitive piece of data that authenticates or
-            authorizes you to a system. [1] For example, a connection
-            string that you pass to a database so you can authenticate a session
-            and request data from it. Or an API token that you
-            supply when you make a call to your cloud provider so you can read
-            and write from its storage. Both of these pieces of information provide access to sensitive data, so you don't want them falling into the wrong
-            hands.
+            Let's look at a hypothetical. The Seal Brewing Company is planning a promotion to sell some seasonal, limited-run beers. Their promotion involves something more than a simple read of static content; there is something dynamic about it for each user, perhaps a requirement to log in or sign up before making a purchase. Seal Brewing knows when the event will occur and they're planning to spread the word via typical marketing channels like email, Facebook, Twitter, etc. The URL where this promotion will live is not known by the general public yet and they will not know until they get that email or see that post on Twitter. But when they do find out the URL a big burst of traffic may overwhelm the existing infrastructure and now this promotion has taken down the site by causing cascading failures in other components and disrupted normal business activities across Seal Brewing as a whole.
           </p>
-          <h4>Secrets vs. sensitive information</h4>
+          <img src="assets/images/tweet.png" alt="tweet">
+          <h2>2 Potential Solutions</h2>
+          <h3>2.1 Scaling or Rebuilding Existing Infrastructure</h3>
           <p>
-            You probably have other sensitive information you’d like to keep
-            secret too, like PII (personally identifiable information). But
-            they’re not secrets if they don’t directly grant you access to a
-            system. While any sensitive information should be stored securely,
-            the scope of our discussion here is limited to application secrets.
-          </p>
-          
-          <h4>Secrets vs. configuration</h4>
-          <p>
-            Configuration is important because it influences how your
-            application operates, but not all of it is really private. Your
-            application needs to know what environment to run in: should it run
-            in dev, or prod? That’s a piece of configuration, but it doesn’t
-            authenticate or authorize you in any way—so it’s not a secret.
-          </p>
-          
-
-          <h3>2.2 So what?</h3>
-          
-          <h4>
-            Secrets are the keys to your kingdom—yet they're constantly leaked
-          </h4>
-          <p>
-            In 2019, researchers at the North Carolina State University scanned
-            almost 13% of Github’s public repositories and found "not only is
-            secret leakage pervasive–affecting over 100,000 repositories–but
-            that thousands of new, unique secrets are leaked every day." [2] They
-            noted it wasn't just inexperienced developers leaking secrets in
-            hobby projects. Several large, prominent organizations were also
-            leaking their secrets, including a popular website used by millions
-            of college applicants in the US and a major government agency in
-            Europe. In both cases, they exposed their respective AWS
-            credentials.
-            <a target="_blank" href="https://github.com/search?q=removed+aws+key&type=Commits"
-              >See for yourself</a
-            >
-            how common it is.
-          </p>
-          
-          <h4>Developers make honest but costly mistakes</h4>
-          <p>
-            According to the principle of least privilege, anyone working on
-            your application should only have access only to the secrets they
-            need to do their work. At the same time, if you’re on a small team,
-            and you know everyone personally and trust their intentions, it’s
-            tempting not to follow this principle. But sharing secrets freely is
-            dangerous, because people make mistakes—over-privileging
-            developers can lead to honest but costly mistakes. For example, in
-            2017 DigitalOcean discovered that their "primary database had been
-            deleted" and as their web press release stated: “The root cause
-            of this incident was an engineer-driven configuration error. A
-            process performing automated testing was misconfigured using
-            production credentials.” [3]
-          </p>
-          
-          <h4>Malicious actors cause damage</h4>
-          <p>
-            Even if developers could be perfect, there are always bad actors out
-            there, and mishandling your secrets can give attackers wrongful
-            access to your secrets. In 2019, Capital One had a data breach that
-            affected over 100 million individuals due to a vulnerability related
-            to configuration secrets involving AWS S3 buckets. The attacker
-            previously worked for AWS and was able to exploit a misconfigured
-            firewall to extract files in a Capital One directory stored on AWS's
-            servers. [4]
-          </p>
-          
-
-          <h3>2.3 Common practices</h3>
-          
-          <h4>Encryption</h4>
-          <p>
-            While encrypting a secret protects it from immediate threat, it
-            isn’t a complete solution. For example, in a Rails application, the
-            convention is to
-            <a
-              href="https://guides.rubyonrails.org/security.html#custom-credentials"
-              >store your secrets in an encrypted secrets file</a
-            >. You can store the encryption key to unlock it in another file or
-            in an environment variable, but <em>that’s</em> a secret too. And a
-            particularly sensitive one: anyone who has access to it (and your
-            application) can read and edit <em>any</em> of your secrets. So, you
-            don’t want it to leak. But if you plan to secure it via encryption
-            first, you’ll just kick the can down the road. This is an important
-            problem we’ll revisit later.
-          </p>
-          <img
-            src="assets/images/case-study/encryption-problem.png"
-            class="case-study-image large-image"
-          />
-          
-          <h4>Environment variables</h4>
-          <p>
-            The Twelve-Factor App methodology made popular the practice of
-            storing configuration in environment variables to separate
-            configuration from code. [5] Since secrets are often discussed in
-            the context of configuration, it may feel natural to store your
-            secrets in environment variables if you do so with your
-            configuration. Environment variables aren’t <em>bad</em>, but it’s
-            dangerous to depend on them to carry the weight of managing your
-            secrets.
-          </p>
-          
-          <h5>Sourcing environment variables from files</h5>
-          <p>
-            Environment variables are often set from files. For example, in
-            Node.js development, they’re set in a <code>.env</code> file and
-            then the contents of that file are loaded into the application’s
-            environment.
-          </p>
-          <img
-            src="assets/images/case-study/dotenv-a.png"
-            class="case-study-image"
-          />
-          <img
-            src="assets/images/case-study/dotenv-b.png"
-            class="case-study-image"
-          />
-          <p>
-            This has the advantage that you simply need to use a different
-            <code>.env</code>
-            file for production versus development environments. But if you
-            populate environment variables from files, you must ensure those files don’t get
-            accidentally checked into a public repository or otherwise leaked.
-            Plus, there's a glaring unanswered question: how are those
-            <code>.env</code> files distributed, and is that done securely?
-          </p>
-          
-          <h5>Environment set as part of some other system</h5>
-          <p>
-            Some deployment and CI/CD tools provide a built-in way to set
-            environment variables. Heroku, a popular Platform-as-a-Service,
-            allows users to manually do so in a control panel. This is tedious
-            and error-prone, and there is no fine-grained access control. A more
-            general downside of letting your tools take care of it is how many
-            different tools there are. Every time your team adopts a new one,
-            developers have to stop and learn each new tool’s method for setting
-            them, and each time they do, that’s a new opportunity for secrets to
-            be mishandled.
-          </p>
-          
-          <h5>The leaky environment</h5>
-          <p>
-            Regardless of <em>how</em> environment variables are set, they're
-            leaky. Environment variables are implicitly made available to all
-            children processes, so they're passed to anything the application
-            calls. They’re often dumped in plaintext for debugging and error
-            reporting, so the secrets stored within them can easily end up in
-            logs.
-          </p>
-          
-          <h3>2.4 Secrets in teams</h3>
-          
-          <h4>Secrets get shared</h4>
-          <p>
-            Let's take a hypothetical team of four developers, and call them
-            Alice, Bob, Charlie, and David. Suppose:
-          </p>
-          <ul>
-            <li>Alice emails a config file containing secrets to Bob</li>
-            <li>Bob Slacks a particular secret to Charlie</li>
-            <li>Charlie accidentally checks it into version control</li>
-            <li>
-              David pulls that code and works off of it, and unintentionally
-              writes code that later ends up logging that secret to a log file.
-            </li>
-          </ul>
-          <p>
-            Their secrets are getting around. If you were on that team, would
-            you know where your secrets are?
-          </p>
-          
-          <p>
-            Maybe our hypothetical team tries to share secrets securely. Maybe
-            Alice decides to take a <em>screenshot</em> of a secret and send
-            that to Bob in Slack—and maybe she even goes back into Slack and
-            deletes that screenshot once the recipient has got the secret. Or
-            alternatively, maybe she puts that secret in a file and locks it
-            with a password, sends the locked file over Slack and sends the
-            password to Bob over some other communication channel, like email.
-          </p>
-          
-          <p>
-            This still doesn’t look great. Without a system in place, you have
-            to get creative to share your secrets securely, and that makes them
-            even harder to track.
-          </p>
-          
-          <h4>Teams change</h4>
-          <p>Now suppose the following events occur:</p>
-          <ul>
-            <li>Alice quits</li>
-            <li>Bob moves over from production to development</li>
-            <li>New-hire Emily joins the team</li>
-          </ul>
-          
-          <p>
-            When Alice quits, how do you ensure Alice doesn't retain her access
-            to secrets? Does Bob still have production credentials? When Emily
-            joins, does she have to ask around to find what secrets she needs?
-          </p>
-          
-          <p>
-            Without a system in place, Emily may not get, in a complete and
-            controlled manner, all the secrets she’ll need to do her work. She
-            may not even know she needs some secrets until she gets to work,
-            finds out she needs some, and has to hunt them down.
-          </p>
-          
-          <h4>Secrets change</h4>
-          <p>
-            Let's add one more type of event to the mix, which will surely
-            happen much more often than personnel changes:
-          </p>
-          <ul>
-            <li>Charlie updates an API token</li>
-          </ul>
-          <p>
-            How do you ensure Charlie's teammates use the updated version? And
-            what about applications that depend on it? The old token is invalid,
-            so applications will crash if they try using it. Unless there’s some
-            system for managing secrets sanely, Charlie may have to hunt down
-            the people that need to know or the places where it needs to be
-            updated, and hope that he got them all.
-          </p>
-          
-          <h4>The security/productivity balancing act</h4>
-          <p>
-            While secrets are extremely sensitive, they must be accessible to
-            you and your application.
-          </p>
-          <img
-            src="assets/images/case-study/tension.png"
-            class="case-study-image"
-          />
-          <p>
-            There’s a tension between security and productivity, though,
-            especially when it comes to sharing secrets with other developers.
-            For example, how do you decide on and maintain access levels in your
-            team? Then, how do you securely distribute credentials to team
-            members who need them? And if someone leaves the team, how do you
-            know which secrets they've accessed that you now have to update?
-          </p>
-          
-          <p>
-            It may feel convenient to simply be able to access secrets at any
-            time but if you don’t have structure, process, and security around
-            your secrets, you’ll lose visibility and control over them.
-            Eventually, you’ll find yourself with a big headache called secret
-            sprawl.
-          </p>
-          
-          <h3>2.5 The problem of Secret Sprawl</h3>
-          <p>
-            In all of the scenarios we just examined, we saw hints of secret
-            sprawl. Secret sprawl is what you have when your secrets could be
-            anywhere. Secret sprawl means your secrets are littered across your
-            code, infrastructure, config, and communication channels.
-          </p>
-          <figure>
-            <img
-              src="assets/images/case-study/ccc-sprawl.png"
-              class="case-study-image"
-            />
-            <figcaption>Secrets get sprawled across code, config, and communication
-            channels.</figcaption>
-          </figure>
-            <img
-              src="assets/images/case-study/infrastructure-sprawl.png"
-              class="case-study-image large-image"
-            />
-            <figure>
-              <figcaption>Secrets get sprawled across your infrastructure.</figcaption>
-            </figure>
-          
-          <h4>The questions you can't answer</h4>
-          <p>
-            Secret sprawl means you can't answer questions like these with any
-            degree of confidence:
-          </p>
-          <ul>
-            <li>Who has access to what secrets?</li>
-            <li>When was a particular secret shared or used?</li>
-            <li>
-              If you need to change a secret, where do you have to change it?
-            </li>
-          </ul>
-          
-          
-          <h2>3 Secrets Managers</h2>
-          
-          <h3>3.1 Centralization</h3>
-          <p>
-            To prevent secret sprawl, you must have a single source of
-            truth—one place where all your secrets live. Establishing this
-            "single source of truth" is <em>centralization</em>. Centralization
-            tames secret sprawl, and paves the way to gaining visibility and
-            control around your secrets.
-          </p>
-          <figure>
-            <img
-              src="assets/images/case-study/ccc-fixed.gif"
-              class="case-study-image"
-            />
-            <figcaption>Secret sprawl to centralization</figcaption>
-          </figure>
-
-          <p>
-            Previously, we showed that secrets might be sprawled across your
-            infrastructure. Perhaps they are even passed down service-to-service
-            in your pipeline. But you want it to look more like this:
+            Seal Brewing could explore increasing the capacity of its existing architecture. Now they can handle the bursty traffic for the promotion but the trade-offs could be substantial. First, they might have legacy infrastructure that can't be scaled. Perhaps certain components cannot scale vertically and perhaps others cannot be easily replicated or partitioned and scaled out. 
           </p>
           <p>
-            <img
-              src="assets/images/case-study/infrastructure-fixed.gif"
-              class="case-study-image large-image"
-            />
+            Let's assume Seal Brewing can scale up its infrastructure somehow. Now they're capable of handling large traffic loads every day of the year but this is probably not the best return on investment. Seal Brewing is either buying more expensive hardware than they usually need (scaling vertically) or they're buying economical hardware but in larger quantities (scaling horizontally). The extra capacity is remaining unused most of the year.
+          </p>
+          <p>
+            What if they rebuild their functionality in a different way, perhaps on entirely new components with a cloud provider that can scale up and down with ease? Seal Brewing may be unwilling to spend the time and engineering resources required to rewrite its application.
+          </p>
+          <p>
+            Either way, Seal Brewing might be starting to think about a solution that can be tacked onto the legacy infrastructure. This is where a virtual waiting room fits in.
+          </p>
+          <h3>2.2 A Virtual Waiting Room</h3>
+          <p>
+            Beekeeper is an open-sourced Backend as a Service (BaaS) "virtual waiting room." In concept, a virtual waiting room is simply a public URL endpoint where users can be queued while they await their turn to go to the final destination URL where the actual promotion lives.
+          </p>
+          <p>
+            A virtual waiting room reduces the traffic sent to an endpoint below a set capacity over a period of time. The role of a waiting room is to “flatten the curve.”
+          </p>
+          <img src="assets/images/capacity.png" alt="linegraph">
+          <h3>2.2 How To Get a Virtual Waiting Room</h3>
+          <p>
+            A virtual waiting room seems like it fits the use case nicely, but how can Seal Brewing get one?
+          </p>
+          <h4>2.2.1 Buy a Third-Party Solution</h4>
+          <p>
+            As with any good problem, there is usually someone willing to sell a solution and virtual waiting rooms are no different. Queue-it, CrowdHandler, and Queue-Fair are all examples of third-party solutions for purchase.
+          </p>
+          <p>
+            The main trade-off of purchasing a paid solution is giving up some amount of control. Seal Brewing would not own the infrastructure and would be reliant on the third-party's implementation. Of course, purchasing a solution means they would be spending money as well, but this is not a material negative because building it yourself or even using an open-sourced solution may involve paying for more engineering hours.
+          </p>
+          <h4>2.2.2 Roll Your Own Waiting Room</h4>
+          <p>
+            We talked about it briefly but this option would take some amount of time and effort. This could be done with a cloud provider like Amazon's AWS. They have bespoke cloud services each with different specializations that can be created and linked up together. AWS even has <a href="http://aws.amazon.com/blogs/networking-and-content-delivery/visitor-prioritization-on-e-commerce-websites-with-cloudfront-and-lambdaedge/" target="_blank" rel="noopener noreferrer">information</a> detailing one type of virtual waiting room and how one might go about using their services to create it:
+          </p>
+          <img src="assets/images/amazon.png" alt="amazon infrastructure">
+          <p>
+            Building your own virtual waiting room involves several considerations. First, it means thinking about the tradeoffs involved with a virtual waiting room. What features should it have? How have the challenges associated with said features been overcome by other products on the market like Queue-it? Second, if you're going to use a cloud provider like AWS, it means getting acquainted with AWS. Unfortunately, this is no small thing. Learning what AWS services exist and what they can accomplish takes time. Finally, those two pieces of thinking must be married together: now that you know what features the waiting room ought to have, and now that you know what's possible with AWS services, you need to design the infrastructure you want and deploy it.
+          </p>
+          <p>
+            If that still seems like a lot of work it's because it is. An open-sourced solution is not free either in terms of time commitment, but if done well it is cheaper.
+          </p>
+          <h2>3 Introducing Beekeeper</h2>
+          <h3>3.1 BaaS</h3>
+          <p>
+            As mentioned, Beekeeper is an open-sourced BaaS built for organizations that have one-off promotions involving a dynamic event, are constrained by existing infrastructure or time and effort, and prefer to own their solution rather than purchase off the shelf from a third-party. Let's look at where BaaS sits on a spectrum of possibilities:
+          </p>
+          <img src="assets/images/BaaS.png" alt="BaaS">
+          <p>
+            Developers deploying an application to bare metal servers must account for every part of the software stack, all the way down to hardware selection. Infrastructure as a Service (IaaS) abstracts away hardware concerns, leaving developers responsible for setting up the entire runtime environment including the operating system.
+          </p>
+          <p>
+            With even more abstraction, but typically less control, is something like Backend as a Service, which abstracts away server-side implementation entirely and simply provides an API to interact with the service. An example of a classic BaaS would be Heroku. At this end, most choices are made by the providers of the service; developers have little, if any, control over implementation details.
+          </p>
+          <p>
+            Beekeeper is BaaS because out of the box all the decisions are made and Seal Brewing only has to interact with the CLI tool. It is worth noting that the Beekeeper infrastructure is spun up on Seal Brewing's AWS account and they, therefore, have complete control to make changes to the implementation.
+          </p>
+          <p>
+            Before we go further into the solution it's probably worthwhile to refresh our memory of the problem and make clear a few more things.
+          </p>
+          <h3>3.2 Revisiting the Problem</h3>
+          <p>
+            Seal Brewing is going to hold a one-off event at a pre-determined time and URL that they will make the general public aware of via channels like email or social media. When the public finds out about the event they might flood the URL all at once. Somehow Beekeeper has to intercept this traffic. The one-off nature of the use case is what allows this to happen. The use case does not involve intercepting all of Seal Brewing's traffic. The waiting room URL can be put in these marketing emails and on these social media posts.
+          </p>
+          <p>
+            It is worth noting that a virtual waiting room is not needed for all types of bursty traffic problems. Simple reads and writes can be handled by placing content on a CDN and writing to a separate database that can handle the traffic. 
+          </p>
+          <p>
+            A virtual waiting room solution only comes into play when the users must be allowed to continue to the final destination because the action they need to take is dynamic. Perhaps this means completing a purchase, itself which means having to log in with some credentials, both of which involve talking to existing legacy infrastructure that we are trying to avoid modifying or rebuilding.
+          </p>
+          <h3>3.3 The Beekeeper Solution</h3>
+          <p>
+            Beekeeper is an NPM package used to automate an infrastructure built on top of AWS services. We'll get into the basics of how you use the NPM package soon but for now, let's see what Seal Brewing gets with Beekeeper.
+          </p>
+          <img src="assets/images/infrastructure.png" alt="infrastructure diagram">
+          <p>
+            Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. We'll discuss all this in more detail soon, but let's go through the high-level flow first:
+          </p>
+          <p>
+            <strong>Step 1: A user visits a promotion URL.</strong>
+            Seal Brewing is going to run its promotional sale. They'll install and deploy the Beekeeper NPM package, provide a couple of pieces of information such as the final destination URL that the waiting room should forward to and at what rate. After deploying Beekeeper, Seal Brewing will get a generated URL to use for their promotion.
+          </p>
+          <p>
+            <strong>Step 2: Visiting the promotion URL hits the API Gateway.</strong>
+            When the user clicks the URL, their browser is sending a GET request for a resource. That HTTP request to an endpoint is handled by the API Gateway and that endpoint triggers a Lambda. We call this the "/beekeeper" endpoint.
+          </p>
+          <p>
+            <strong>Step 3: The Producer Lambda is triggered.</strong>
+            A Lambda is a container that AWS spins up with your specified runtime environment, dependencies, and code in it. It’s a serverless compute service that runs code without having to provision resources or manage servers. The logic in the Producer Lambda does a few things. It first checks if the incoming request headers already have our cookie. If the incoming request does not have a cookie, a few additional steps take place. First, the Lambda generates a random token value. Second, the token is placed in a queue (SQS). Third, a cookie is set on the client with this token in it. Fourth, a response header is set that tells the browser when it receives the HTTP response from the API Gateway to redirect the client to the waiting room URL. This waiting room URL consists of static assets; an HTML file with JavaScript and CSS held in an AWS S3 bucket. We'll come back to this waiting room in the S3 bucket, but for now, let's continue by talking about what happens after the token gets put in the queue.
+          </p>
+          <p>
+            <strong>Step 4: The Consumer Lambda pulls from the SQS queue.</strong>
+            A grouping of Consumer Lambdas work to pull these tokens off the queue at a specific rate. The Consumer Lambdas take tokens off the queue and write them to the DynamoDB. This is how Beekeeper controls the rate of traffic flow.
+          </p>
+          <p>
+            <strong>Step 5: The token is written to the DynamoDB.</strong>
+            Now that the Consumer Lambda has pulled off a given token it writes an object to the DynamoDB containing the token, the current date, and a property indicating with a boolean value whether this token is allowed to redirect to the waiting room.
+          </p>
+          <p>
+            <strong>Step 6: The waiting room in the S3 bucket polls the API Gateway.</strong>
+            The waiting room has client-side JavaScript sending AJAX requests to an endpoint on the API Gateway every 20 seconds. We call this the "/polling" endpoint. Instead of triggering a Lambda, the API Gateway pulls off the cookie from the incoming request to get the token and directly queries the DynamoDB to check if the token is in there.
+          </p>
+          <p>
+            <strong>Step 7: Query DynamoDB to see if the token is in there yet.</strong>
+            This is how we decide when to let a user get redirected from the waiting room to the final destination. If the token is in the database the API Gateway responds with an object with two properties "allow": "true" and "origin": "[https://www.sealbrewing.com]". The browser checks the "allow" property and if it is truthy the browser redirects the user to the URL provided in the "origin" property. If the token is not in the database, the API Gateway responds with an object with one property, "allow": "false" and the polling continues every 20 seconds while the user waits.
+          </p>
+          <p>
+            <strong>Step 8 (Optional): The final destination performs a check to make sure the user didn't skip the waiting room.</strong>
+            Without this step, notice how a user could technically skip the waiting room. Here's how it might happen: one user clicks on the promotional link, goes through the whole process outlined above, and makes it to the final destination. Now they know the URL of the final endpoint where the promotion is. They could share that URL on Twitter or Reddit, for example, and now others could go there directly. Note that Seal Brewing probably does not have to be overly concerned with this potential problem. The sharer would have to be influential and the event long-lived such that other users could actually find out about that shared URL. In any case, to prevent users from circumventing the waiting room we have a third endpoint on the API Gateway that we call the "/client" endpoint. If Seal Brewing wants, they can add a simple AJAX request to their frontend JavaScript that will send a GET request to the "/client" endpoint. The browser would send along the cookie with such a request. The logic works the same as in the "/polling" route in Step 7. A direct query of the database occurs and Seal Brewing can expect a JSON object in response with a property "allow" that contains a truthy or falsey value.
           </p>
 
-          <p>
-            After centralization, only your app has secrets, or rather, whatever
-            service needs secrets will get only the secrets they need. You
-            thereby reduce the attack surface area of your application.
-          </p>
-          
+
 
           <h3>3.2 Encryption</h3>
           <p>
