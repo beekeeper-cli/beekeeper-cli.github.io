@@ -84,18 +84,18 @@
             A virtual waiting room reduces the traffic sent to an endpoint below a set capacity over a period of time. The role of a waiting room is to “flatten the curve.”
           </p>
           <img src="assets/images/capacity.png" alt="linegraph">
-          <h3>2.2 How To Get a Virtual Waiting Room</h3>
+          <h3>2.3 How To Get a Virtual Waiting Room</h3>
           <p>
             A virtual waiting room seems like it fits the use case nicely, but how can Seal Brewing get one?
           </p>
-          <h4>2.2.1 Buy a Third-Party Solution</h4>
+          <h4>2.3.1 Buy a Third-Party Solution</h4>
           <p>
             As with any good problem, there is usually someone willing to sell a solution and virtual waiting rooms are no different. Queue-it, CrowdHandler, and Queue-Fair are all examples of third-party solutions for purchase.
           </p>
           <p>
             The main trade-off of purchasing a paid solution is giving up some amount of control. Seal Brewing would not own the infrastructure and would be reliant on the third-party's implementation. Of course, purchasing a solution means they would be spending money as well, but this is not a material negative because building it yourself or even using an open-sourced solution may involve paying for more engineering hours.
           </p>
-          <h4>2.2.2 Roll Your Own Waiting Room</h4>
+          <h4>2.3.2 Roll Your Own Waiting Room</h4>
           <p>
             We talked about it briefly but this option would take some amount of time and effort. This could be done with a cloud provider like Amazon's AWS. They have bespoke cloud services each with different specializations that can be created and linked up together. AWS even has <a href="http://aws.amazon.com/blogs/networking-and-content-delivery/visitor-prioritization-on-e-commerce-websites-with-cloudfront-and-lambdaedge/" target="_blank" rel="noopener noreferrer">information</a> detailing one type of virtual waiting room and how one might go about using their services to create it:
           </p>
@@ -140,7 +140,7 @@
           </p>
           <img src="assets/images/infrastructure.png" alt="infrastructure diagram">
           <p>
-            Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. We'll discuss all this in more detail soon, but let's go through the high-level flow first:
+            Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. The following steps describe the flow of the infrastructure:
           </p>
           <p>
             <strong>Step 1: A user visits a promotion URL.</strong>
@@ -175,797 +175,356 @@
             Without this step, notice how a user could technically skip the waiting room. Here's how it might happen: one user clicks on the promotional link, goes through the whole process outlined above, and makes it to the final destination. Now they know the URL of the final endpoint where the promotion is. They could share that URL on Twitter or Reddit, for example, and now others could go there directly. Note that Seal Brewing probably does not have to be overly concerned with this potential problem. The sharer would have to be influential and the event long-lived such that other users could actually find out about that shared URL. In any case, to prevent users from circumventing the waiting room we have a third endpoint on the API Gateway that we call the "/client" endpoint. If Seal Brewing wants, they can add a simple AJAX request to their frontend JavaScript that will send a GET request to the "/client" endpoint. The browser would send along the cookie with such a request. The logic works the same as in the "/polling" route in Step 7. A direct query of the database occurs and Seal Brewing can expect a JSON object in response with a property "allow" that contains a truthy or falsey value.
           </p>
 
-
-
-          <h3>3.2 Encryption</h3>
+          <h2>4 How To Use Beekeeper</h2>
           <p>
-            In section 2.3, we mentioned that encryption alone isn't a complete
-            solution. But when you combine it with centralization, you're well
-            on the way. Your secrets should be encrypted client-side, meaning
-            they never leave your device before they’re encrypted. They should
-            remain encrypted in transit and at rest too, so they’re never seen
-            nor persisted in plaintext. That includes encryption in
-            communication channels, temporary stops, and persistent storage.
-            Each step adds a layer of security, as illustrated below.
+            To set up a Beekeeper waiting room, Seal Brewing must have an AWS account, set their access keys, download the AWS CLI, and have Node and NPM installed on their machine. Once those preliminary steps are finished, deploying a virtual waiting room takes just a few minutes to set up and is torn down in seconds. 
           </p>
-          <img
-            src="assets/images/case-study/encryption-best-practices.gif"
-            class="case-study-image large-image"
-          />
-
-          <h3>3.3 Secrets managers</h3>
           <p>
-            A secrets manager is a system that helps you securely store and
-            manage your secrets. Secrets managers are inherently centralized and
-            invariably use encryption in some way. Beyond that, they vary in the
-            use case they are targeted for and in the features they offer.
+            It is possible to set up as many virtual waiting rooms. For each one, Seal Brewing will be asked six questions such as the name they want publicly displayed on the waiting room page, the AWS region where the infrastructure is deployed, the endpoint of the event, and the rate at which traffic should be sent from the waiting room to that endpoint.
           </p>
-          
-          <h4>How to choose a secrets manager</h4>
           <p>
-            In recent years, a number of secrets management solutions have
-            popped up. There are several things to consider when you’re choosing
-            a secrets manager. First, a secrets manager must keep your secrets
-            <strong>safe</strong>. To do that, it should encrypt your secrets.
-            Second, how does it accommodate multiple users? How does it let you
-            <strong>share access</strong> safely? Third, you need to know how to
-            actually use it in your applications. How do
-            <strong>applications</strong> actually <strong>get secrets</strong>?
-            You might have to significantly adjust your workflow depending on
-            the solution you pick.
+            Deploying the waiting room builds up all the required components and permissions. Once the build is done two URLs are generated; the waiting room URL is put in the promotional emails and social media posts and the client check endpoint can optionally be utilized by Seal Brewing to prevent people from skipping the queue.
           </p>
-          
-          <h4>How secrets managers work with your application</h4>
           <p>
-            Let’s zoom in on that last question: how applications get secrets.
-            And that’s done in one of two ways: either your application has to
-            fetch the secrets it needs—so you have to write more application
-            code—<em>or</em> your application is run in a certain context such
-            that it already has the secrets it needs.
+            If the waiting room is no longer needed but the advertising links are still being used the waiting room can be turned off and visitors will redirect to Seal Brewing's endpoint directly, skipping the waiting room. When finished with the waiting room entirely is can be torn down in seconds with a simple command. Detailed instructions for using Beekeeper can be found in our <a href="https://www.npmjs.com/package/beekeeper-cli" target="_blank" rel="noopener noreferrer">README</a>.
+          </p>
+        
+          <h2>5 Engineering Decisions and Trade-Offs</h2>
+          <p>The Beekeeper team encountered a few engineering challenges and made several important decisions when designing and building the infrastructure.</p>
+          <h3>5.1 Edge Optimization Versus Regional Deployment</h3>
+          <p>
+            One of the first forks in the road was whether to put the waiting room on the edge or not. Putting assets or functions on the edge means bringing them closer to end-users to reduce latency.
+          </p>
+          <p>
+            For example, with AWS CloudFront, you can put a static asset in an S3 bucket and create a CloudFront distribution for it. Now the asset no longer resides on a server in a single geographic location like "us-east-1.," which is in Virginia. Instead, identical versions of the asset live in many locations across the globe. When a user makes an HTTP request for it, the asset is served from the lowest latency location, typically the location closest to the request. Without edge optimization, a request from Los Angeles might take 70ms to get to a server in Amazon's "us-east-1" region and set up a TCP handshake, and another 70ms for the actual round trip of data back in response. If the asset is distributed to a location very close to the user it might take 10ms or less. For example, <a href="https://wondernetwork.com/pings/Los%20Angeles" target="_blank" rel="noopener noreferrer">a round trip ping from Los Angeles to San Diego</a> could be as fast as 4ms for the TCP handshake and another request/response cycle for the actual data.
+          </p>
+          <p>
+            In addition to serving static assets on the edge, many cloud providers, including Amazon, provide the ability to do computation on the edge above and beyond serving static assets like an HTML page. Specifically, a function can be distributed and executed in various geographic locations through Amazon's Lamba@edge service.
+          </p>
+          <p>
+            Should the Beekeeper virtual waiting room be edge optimized? The initial temptation is certainly to edge optimize it. Let's assume the waiting room loads in under 50ms for everyone with edge optimization as compared to say 500-1000ms for a far-flung end-user trying to hit a centrally located server. Has anything of significance been achieved with edge optimization in that scenario? Reducing latency with edge optimization is great for a lot of use cases, but it doesn't seem to be useful here. The goal of a virtual waiting room is to intercept and diffuse a burst of traffic. Client-side JS polls every 20 seconds and when the user's token is written to the database they can proceed to the final destination. This user might be waiting for many seconds or many minutes. There is no discernible benefit for a site visitor that can get the waiting room loaded in 50ms versus 500ms.
+          </p>
+          <p>
+            If a user was interacting with a web application and every time they clicked a new page they experienced a second of latency, that would be a bad user experience. That is not the use case of a virtual waiting room; it's a single click to load a single page. If they're going to wait minutes anyway, what's the point of loading the waiting room in under 50ms? Edge optimizing like this can be characterized as "hurry up and wait." In other words, optimizations are made to "hurry" the site visitor to the waiting room, and then they simply wait with no benefit.
+          </p>
+          <p>
+            For the vast majority of situations, even global promotions with a user in Hong Kong and an infrastructure in the United States, users will have the waiting room page loaded in an acceptable amount of time that does not give a "broken" feeling. Further, most events/promotions will have a more regional use case, typically within the same country.
+          </p>
+          <p>
+            In summary, a) there is little upside unless something about "hurry up to wait" sounds appealing, and b) most promotions are going to be regional in nature anyway.
+          </p>
+          <p>
+            The extra complexity of making the waiting room and all its services edge optimized did not provide a commensurate benefit for Beekeeper given that it is a "waiting room." All Beekeeper's AWS services are located in a single region to be specified by Seal Brewing when deploying our NPM package; they can choose from one of 25 different AWS locations to deploy the infrastructure.
+          </p>
+          <p>
+            Let's now turn to one of the AWS services Beekeeper chose to use, API Gateway.
+          </p>
+          <h3>5.2 Choosing API Gateway</h3>
+          <p>
+            When we first started designing Beekeeper we began with an infrastructure based on a waiting room in an S3 bucket on a CloudFront distribution. However, we still needed some logic in a Lambda and the only way to trigger a Lambda with that approach was using one of the CloudFront triggers AWS offers. That approach lacked flexibility because triggering a Lambda with a CloudFront trigger in our original design only allows logic to take place in the Lambda code. This means a Lambda must be used for every kind of request. Instead, we chose to use a different service offered by AWS called API Gateway. API Gateway is more flexible and powerful. Here's what the interface looks like in the AWS console: <mark>[insert some image]</mark>
+          </p>
+          <p>
+            What makes API Gateway powerful is how it provides an opportunity to perform checks and modify data at different stages of the HTTP request/response cycle. After a request from a client comes in, actions can be taken at both the Method Request and Integration Request stage before the request even gets to the Lambda being triggered. After the Lambda completes and passes the response back to the API Gateway, actions can be taken at both the Integration and Method Response stages before finally, the API Gateway sends a response back to the client.
+          </p>
+          <p>
+            There are five places to take action; two after the request but before the Lambda, in the Lambda itself, and two after the Lambda but before the response goes back. As described below, API Gateway allows us to skip the use of a Lambda for the "/polling" route. Given that AWS sets a 1,000 concurrency limit on the number of Lambdas that can be allocated in a given region, avoiding the use of Lambdas is beneficial because it allows capacity to be retained that can be used elsewhere in the infrastructure. This means the infrastructure as a whole can handle more traffic.
+          </p>
+          <h4>5.2.1 "/beekeeper" Endpoint</h4>
+          <p>
+            Lambas have an option to be triggered as a proxy integration. Choosing a proxy integration means that API Gateway will forward the unmodified request in its entirety to the Lambda code. Not choosing proxy integration means that the API Gateway can make modifications to the request, such as creating and transforming data, and then sending that modified data to the Lambda. We use proxy integration and trigger a Lambda (Producer Lambda) for new users hitting the initial endpoint. The Producer Lambda checks the incoming request's headers for the existence of the cookie and if it's not present, the Producer Lambda generates a token and creates a response header setting a cookie with that token in it. The Producer Lambda then sets other headers relating to Content-Type, Location, and various Access-Control-Allow headers. The Producer Lambda also sets the response status code to 302 indicating a redirect. Once this custom object is formed, the Producer Lambda responds to API Gateway with it via the proxy integration and API Gateway in turn responds to the client causing a redirect to the waiting room URL which is an endpoint representing the static asset in S3.
+          </p>
+          <h4>5.2.2 "/Polling" Endpoint and "/client" Endpoint</h4>
+          <p>
+            This is where API Gateway became very useful. Client-side JavaScript in the S3 bucket (the waiting room) polls this endpoint every 20 seconds with AJAX requests. API Gateway needs to query the database but that is simple enough logic that AWS allows us to do it without triggering a Lambda. Instead, AWS empowers API Gateway to directly query a database.
+          </p>
+          <h4>5.2.3 Directly Querying DynamoDB and VTL</h4>
+          <p>
+            A request comes in from the client-side JS and API Gateway directly queries DynamoDB to check for the token. This time we did not use proxy integration, meaning we took advantage of the Integration Request and Integration Response stages in the diagram above to access and transform data. This is done using AWS Mapping Templates, which in turn use Apache Velocity Template Language (VTL).
+          </p>
+          <p>
+            Mapping Templates and the VTL syntax allow us to get access to information about the request, like parameters or headers. We're dealing with an HTTP request and DynamoDB does not speak HTTP; it expects to be communicated with in a specific syntax. With VTL we can access a cookie off the headers of the HTTP request and then format a JSON object with this data in a syntax DynamoDB expects to receive. In other words, we can get the information we need to make a proper query to the database directly from API Gateway.
+          </p>
+          <p>
+            DynamoDB's response will also not be a suitable HTTP response to send back to the client either. The Integration Response phase of API Gateway from the diagram above allows us to intercept the database response and perform manipulation with VTL. We can create a JSON object that API Gateway can send back as the response body. For the "/polling" resource, just two properties are in this object, one telling the client-side JS whether the token has an associated "allow" property of true, and the final destination to redirect the user to. For the "/client" resource, just one property is in this object, "allow" which is a boolean, either true or false.
+          </p>
+          <p>
+            In summary, API Gateway is powerful and has built in flexibility to add Request/Response logic with VTL. This means logic doesn't always have to live in a Lambda, which in turn means we don't always have to use a Lambda.
+          </p>
+          <h3>5.3 DynamoDB and Lack of Database Caching</h3>
+          <p>
+            Beekeeper is storing records that have three simple properties per collection stored in a single table of DynamoDB:
+          </p>
+          <p>
+            <code>
+              {
+                date: Date.now(),
+                usertoken: message.Body,
+                allow: true,
+               }
+            </code>
+          </p>
+          <p>
+            This data is all we need to store for each site visitor. When choosing a database the goal is usually to easily store data and easily access it. If the data is relational in nature, for example, there are "users" and "products" and "orders" and these types of objects relate to each other, then a SQL database might be the right choice. In Beekeeper's case, we do not have multiple types of data that interrelate. Our data is unrelated and stored in separate collections in a single table. Therefore, a NoSQL database in DynamoDB made the most sense. Scaling is another consideration and horizontal scaling is notoriously difficult with SQL databases. We'll explain how DynamoDB stores data a little below but scaling horizontally is easier with NoSQL databases; in the case of DynamoDB AWS does all the heavy lifting for us.
+          </p>
+          <p>
+            Another potential service that AWS offers is called Amazon DynamoDB Accelerator, or DAX for short. In simple terms, it is a fully managed solution for caching data in-memory. We chose not to use utilize database caching. First, Beekeeper's database queries are already fast. DynamoDB is a NoSQL database similar to a hash table where the value of each key in the hash table is a binary tree. The partition key is the key in the hash table and allows you to spread your data across an unlimited number of nodes (this allows scaling). DynamoDB uses the partition key's value as input to an internal hash function. The output from the hash function determines the partition (physical storage internal to DynamoDB) in which the item will be stored. Our partition key is the user token. 
+          </p>
+          <p>
+            This means that whenever we perform a read of the table looking for a particular token we have a time complexity of O(1) to find that primary key. Then, an O(log n) binary search is made through that item's collection of data which is just three properties. DAX can optimize things further by placing data in-memory. When queries are made for that same data again DAX can provide an in-memory response in O(1) constant time.
+          </p>
+          <p>
+            Beekeeper does make repeated queries when the frontend JavaScript polls every 20 seconds; that polling triggers a read of the database to see if the token is present in the database table. The benefit of DAX is going from single-digit millisecond latency to microseconds but because Beekeeper waits 20 seconds to make these queries anyway, capturing the efficiency that DAX gives is not critical.
+          </p>
+          <p>[source: https://aws.amazon.com/dynamodb/dax/]
+            [source: https://www.alexdebrie.com/posts/dynamodb-no-bad-queries/]</p>
+          <h3>5.4 Validating Users With Cookies or Query String Parameters</h3>
+          <p>
+            Beekeeper's infrastructure relies on being able to track users to determine whether or not to grant them access to the final destination. We came up with two valid options for tracking users each with its own set of pros and cons. In both cases, Beekeeper generates a unique token for each visitor to the waiting room. That token needs to be given to the visitor so that we can track them during their interaction with the virtual waiting room. The two approaches we considered were 1) cookies, or  2) query string parameters plus IP address.
+          </p>
+          <p>
+            Our current implementation is a cookie-based approach but let's evaluate using query string parameters first. Instead of the Producer Lambda setting a cookie, it could have set query parameters that contained the token like so:
+          </p>
+          <p>
+            <code>https://beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com/index.html?token=7483928</code>
+          </p>
+          <p>
+            Now the client would be sitting in the waiting room with query parameters tacked onto the URL. When the client-side JS makes an AJAX request to "/polling", those query parameters would need to be sent along, too. That can be done with client-side JavaScript like this:
+          </p>
+          <p>
+            <code>
+              const urlParams = new URLSearchParams(window.location.search);
+              urlParams.toString();
+            </code>
+          </p>
+          <p>
+            Ignoring the possibility of augmenting this approach with an IP address for the moment, what are the downsides to putting the token in the URL query string? The token is exposed and visible in the URL string. Once someone goes through the waiting room to the final destination they'll know their token is valid and they could share it. A different user could modify their waiting room URL query string and they would be redirected to the final destination on the very first polling cycle. Even further, the sharer doesn't just know a valid query string now, they know the URL of the final destination as well. That user could then share the final destination URL in its entirety (with a query string that contains a valid token). Someone else could then copy/paste that into their browser's search bar and instantly skip the waiting room altogether. Even if the final destination is doing a check by hitting our "/client" endpoint the user will be valid.
+          </p>
+          <p>
+            Given that using the token in the query string alone is not sufficient, we explored combining it with an IP address. When a new user visits the waiting room link the Producer Lambda, with help from the API Gateway, would record the user's IP address and associate it with a new unique token. The Producer Lambda would then pass the IP address and token to the queue and return the token to the user in the form of a query string. With these two associated pieces of information a user can now make an AJAX request, free of cookies, and if their IP address and query string match an existing database entry, be forwarded to the origin. This IP address query string solution has some flaws. Query strings are lost if a browser is closed, meaning a user would have to revisit the initial link to get a new string and be placed at the end of the line. Secondly, IP addresses are not static and are generally regarded as an unreliable way to track users. This is because IP addresses can be spoofed (i.e. a user fabricates their IP address) and IP addresses can change (this is an issue with mobile users that can change addresses as they travel).
+          </p>
+          <p>
+            For the aforementioned reasons, we settled on a cookie-based approach. With a cookie, things are hidden from view and if the "/client" check endpoint is used, Seal Brewing can prevent people from skipping the waiting room. Cookies, however, have their own challenges.
+          </p>
+          <h3>5.5 Same-Origin Policy, CORS, and Cookies</h3>
+          <p>
+            Beekeeper has three (3) different origins in our infrastructure.
           </p>
           <ol>
-          	<li>
-	          	A secrets manager might
-	            require you to make an API call within your code to fetch secrets
-	            from it, in which case it’s more of a decoupled and passive
-	            component.
-          	</li>
-          	<li>
-          		On the other hand, your application might also be run
-	            with the secrets it needs already available. For example, if you use
-	            an orchestration service, such as Puppet or Docker Swarm, there
-	            will likely be a built-in way of specifying secrets, which will then
-	            be made available in the environment your application code executes
-	            in.
-          	</li>
-          </ol>
-        	<p>
-        		Another approach that works the second way is what the secrets manager
-            SecretHub does. SecretHub runs your application as a child process
-            and injects the secrets into the environment of that process. This
-            gives SecretHub some level of control, as it can monitor the
-            standard output and standard error streams of your application.
-        	</p>
-          
-
-          <h3>3.4 Existing solutions</h3>
-          
-          <h4>Vault by Hashicorp</h4>
-          <p>
-            Vault is the most popular commercial solution. It's highly flexible
-            and extensible. For example, it integrates with the storage backend
-            and identity provider of your choice, and it can integrate with a broad array of plugins.
-            But Vault is widely
-            regarded as complex, and can be overkill for many teams. Their own
-            docs admit this, stating "Vault is a complex system that has many
-            different pieces." [6] It is probably the best choice if you need some
-            of the features that only Vault offers, and if your team or
-            organization has the expertise and bandwidth to manage the Vault
-            beast.
-          </p>
-          
-          <h4>Other commercial solutions</h4>
-          <p>
-            Although Vault is dominant, there are other players on the market.
-          </p>
-          <ul>
-            <li>Doppler is an early YC startup that launched in late 2020 whose
-            focus is making it "super easy" to manage secrets. One thing that
-            may give users pause is that secrets are sent plaintext to Doppler.</li>
-            <li>EnvKey has a different security model—it takes a "zero trust"
-            approach and encrypts secrets client-side before they are sent over
-            the network. Like Doppler, EnvKey is easy to get started with, but
-            it is not as feature-rich: for example, it lacks secret versioning
-            and the ability to segregate permissions on a per-project basis.</li>
-            <li>SecretHub has client-side encryption and is feature-rich, but
-            it is complex. SecretHub also redacts secrets from standard output and standard error,
-            which helps to prevent secrets being visible in logs locally and/or
-            in any logs that might be shipped off to third parties.</li>
-          </ul>
-          <p>
-            Ultimately, all commercial solutions are third parties that you have
-            to trust. Many teams prefer using open-source software for a variety
-            of reasons, and when it comes to secrets management, there is one
-            strong reason to: you have full control over the system.
-          </p>
-          
-          <h4>Open-source solutions</h4>
-          <p>
-            There are open-source solutions out there, ranging from utility-like
-            tools that tend to require you do a lot to get up and running, to
-            more complete solutions with UIs and built-in access control. The
-            latter, though, tend to be targeted toward specific use cases. For
-            example, Confidant, which was developed by Lyft in 2015, has a
-            nice UI and intuitive access control, but it is Docker-centric and
-            AWS-centric; it assumes you are using Docker and AWS roles for authorization. An example of a more
-            utility-like tool is credstash, which, like Confidant, uses AWS under
-            the hood. But it has limited functionality. For example, it doesn't offer logs or the
-            ability to segregate secrets by project and environment. It also
-            requires a fair bit of setup. For example, you need to have an AWS KMS key
-            and your developers all need AWS credentials.
-          </p>
-          
-          <h4>AWS Secrets Manager</h4>
-          <p>
-            AWS Secrets Manager came out in 2018, and if you're AWS-native, it may
-            be perfect for your team. However, if your team doesn't already use
-            AWS services, it's not exactly a plug-and-play solution. Navigating
-            the AWS ecosystem presents a steep learning curve in itself, and
-            Secrets Manager does not come with access control set up for you out
-            of the box.
-          </p>
-          
-          <h4>Summary of existing solutions</h4>
-          <p>
-            Existing solutions can be categorized in very broad strokes as
-            ‘lightweight’, or ‘heavyweight’, where lightweight emphasizes ease
-            of quickly getting started using it, and heavyweight emphasizes
-            features.
-          </p>
-          <img
-            src="assets/images/case-study/existing-solutions.png"
-            class="case-study-image"
-          />
-          <p>
-            Even in the lightweight category, there’s some diversity. For
-            example Doppler emphasizes usability, while EnvKey
-            emphasizes security. The heavyweight ones, such as SecretHub
-            and Vault, tend to offer more features but at the cost of greater
-            complexity. There are also several other open-source solutions, but
-            they either have a lot of overhead or are built for a niche use
-            case.
-          </p>
-          
-          <h3>3.5 A new solution</h3>
-          <p>
-            While the solutions above provide some helpful ways to manage
-            application secrets, we found they weren’t optimal for small teams
-            to hit the ground running with. Because of this, we built Haven.
-          </p>
-          <img
-            src="assets/images/case-study/existing-solutions-with-haven.png"
-            class="case-study-image"
-          />
-          
-          
-          <h2>4 Introducing Haven</h2>
-          
-          <p>
-            Haven is an open-source secrets manager built with small teams and
-            ease of use in mind. It protects application secrets using best
-            practices, plus it’s easy to integrate and use in your applications.
-          </p>
-          
-          <p>
-            After we identified the components we’d need to build a good secrets manager, we realized
-            AWS had trusted and long-standing services for some crucial
-            components.
-          </p>
-          
-          <ol>
             <li>
-              Since secrets need to be encrypted and decrypted with an
-              encryption key and "successful key management is critical to the
-              security of a cryptosystem" (<a
-                href="https://en.wikipedia.org/wiki/Key_management"
-                >Wikipedia</a
-              >), we opted to use the highly vetted AWS Key Management Service
-              (KMS). This is the only AWS service Haven uses that does not
-              have a free tier: KMS costs $1 per month per key.
+              The promotional URL sent to users. Seal Brewing will send this to their users in promotional emails or posted on Twitter, etc. This points to a resource on the API Gateway. This is randomly generated by AWS and might look something like this:
+              <p><code>https://p0xoaomdfe.execute-api.us-east-2.amazonaws.com/prod/beekeeper</code></p>
             </li>
-            
             <li>
-              Authentication and authorization is another crucial piece, and we
-              chose AWS Identity and Access Management (IAM). Every time an
-              entity makes a request to a non-public AWS resource, the request
-              goes through IAM first. Using IAM as the gatekeeper for all
-              storage and encryption logic meant that we could ensure only
-              entities we authorized could read secrets, write secrets, and so
-              on.
+              The URL where the waiting room exists. This is the URL of a static asset in the S3 bucket. When a user tries to visit #1, they are given a cookie and redirected here. This is randomly generated by AWS and might look something like this:
+              <p><code>https://beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com/index.html?p=0</code></p>
             </li>
-            
             <li>
-              Since we wanted IAM to be the gatekeeper for storage, we also use
-              AWS for storage, and we had several storage options to choose
-              from. Haven sits in the critical path of your application being
-              served, so low latency and high availability were important. (On
-              the other hand, scalability was not a concern for us.) We chose
-              Amazon DynamoDB because it has good documentation, high availability, and
-              single-digit-milliseconds latency.
+              The final destination URL. This is where the promotion lives on Seal Brewing's infrastructure. This might look something like:
+              <p><code>https://www.sealbrewing.com/sale</code></p>
             </li>
           </ol>
-          
           <p>
-            Although we use AWS under the hood, you don't need cloud expertise
-            to productively use Haven. The Haven Admin needs an AWS
-            account—that’s it.
+            For two URLs to be considered the same origin they must have the same scheme, host, and port. Note that the URLs in #1 and #2 above differ in that they do not have exact matching hosts; the host of #1 is <code>p0xoaomdfe.execute-api.us-east-2.amazonaws.com</code> while the host of #2 is <code>beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com</code>.
           </p>
-          
-
-          <h3>4.1 How does Haven work?</h3>
+          <h4>5.5.1 How Do The Same-Origin Policy and CORS Affect Beekeeper?</h4>
           <p>
-            The architecture of a Haven instance can be split up into two
-            components: the client side and the corresponding AWS infrastructure
-            side. On the client side, each user—be it a Haven Admin, a
-            developer or an application server—uses the Haven application to
-            interact with the instance’s secrets. All of these users have Haven
-            installed on their personal machines and are using Haven to interact
-            with the same AWS infrastructure, albeit with varying levels of
-            permissions.
-          </p>
-          
-          <img src="assets/images/case-study/architecture.png" class="case-study-image large-image">
-          
-          <p>
-            To showcase how Haven works, let’s walk through a common workflow,
-            including how you set up Haven as an Admin, how you add a project to
-            Haven, how you add developers to your Haven projects, and how you
-            run your applications with Haven.
-          </p>
-          
-          <h4>Setting up Haven</h4>
-          <p>
-            The Haven Admin is the person responsible for creating every project
-            and every user, assigning permissions to the users, and reviewing
-            access logs.
-          </p>
-          
-          <p>
-            Haven offers both a UI and CLI, which share the same Haven Core
-            package under the hood. To get started with the Haven CLI, you
-            install the haven-secrets-cli package from npm. After installing the
-            npm package, you run <code>haven setup</code>, which assigns you as
-            a Haven Admin.
-          </p>
-          
-          <p>
-            During setup, Haven connects to your AWS account and provisions the
-            backend resources for creating projects and their environments,
-            adding users, setting permissions, and adding and updating secrets.
-            Note that your AWS account is the <em>only</em> place your secrets
-            will ever be stored with Haven—there is no external Haven server
-            with your secrets.
-          </p>
-          <img
-            src="assets/images/case-study/admin-setup.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            Haven provisions a file called havenAccountFile, which contains your
-            Haven credentials. All you need to do is place this havenAccountFile
-            in your home directory.
-          </p>
-          
-          <h5>Integrating your projects</h5>
-          <p>
-            Let’s say you have an application called BlueJay that you want to
-            integrate with Haven. Note that as the Haven Admin, you are the only
-            person who will be able to create or delete projects. After you run
-            <code>haven createProject BlueJay</code>, Haven provisions a
-            DynamoDB table and set of IAM permission groups for your application
-            BlueJay.
-          </p>
-          <img
-            src="assets/images/case-study/admin-create-bluejay.png"
-            class="case-study-image large-image"
-          />
-          <p>Next, you add all your secrets for the BlueJay project.</p>
-          <img
-            src="assets/images/case-study/admin-put-bluejay.png"
-            class="case-study-image large-image"
-          />
-          <p>Your project BlueJay is now integrated with Haven.</p>
-          <p></p>
-          
-          <h4>Adding developers to Haven projects</h4>
-          <img
-            src="assets/images/case-study/admin-create-user.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            When you create a user, Haven provisions temporary user credentials.
-            They’re saved to your computer, and you’ll then send this file to
-            the intended user.
-          </p>
-          <img
-            src="assets/images/case-study/admin-temp-credentials.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            Each developer has to install the haven-secrets-cli package from npm
-            on their personal computer. Let’s switch over to the new user’s
-            point of view, where we see that they’ve received the temporary
-            credentials.
-          </p>
-          <img
-            src="assets/images/case-study/dev-temp-credentials.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            The developer puts this file in their home directory. Note that
-            Haven users other than the admin don't need an AWS account since
-            they'll be connecting to the Haven Admin’s AWS account. Initially,
-            the developer can’t interact with any projects and secrets. The
-            developer must run <code>haven userSetup</code> on their computer
-            after placing their havenAccountFile in their home directory. Haven
-            will then fetch their permanent credentials.
-          </p>
-          <img
-            src="assets/images/case-study/dev-perm-credentials.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            They are now able to start interacting with Haven based on the
-            permissions you give to them. You’re able to grant them read and/or
-            write permissions for secrets on a per-project, per-environment
-            basis. (Granting permissions is an admin-only capability.) Depending
-            on their permissions, they are able to create, update, and/or read
-            secrets, and also run the application locally using
-            <code>haven run</code>. Below, we depict the developer being able to
-            fetch a secret that you, the admin, has stored.
-          </p>
-          <img
-            src="assets/images/case-study/dev-get.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            If the dev is not authorized to that particular secret, they’re
-            denied access:
-          </p>
-          <img
-            src="assets/images/case-study/dev-get-blocked.png"
-            class="case-study-image large-image"
-          />
-          
-          <h4>Using Haven in your application</h4>
-          <p>
-            Finally, let’s look at how you can use Haven in your applications.
-            We assume you run your application on a server, or rather, in an
-            environment that has a filesystem. The Haven Admin creates a “server
-            user” under this AWS account, which is really just another Haven
-            user like developers are. As we saw in the previous section, the
-            Haven Admin receives a havenAccountFile for the new server user. The
-            Haven Admin SSHs into the server where your application is run and
-            installs Haven globally or as a dependency in your project, as well
-            as place the havenAccountFile in the home directory of the
-            operating-system user that the application will run from. Then, the
-            Haven Admin will run <code>haven userSetup</code>, just as the
-            developer did in the previous section.
-          </p>
-          
-          <p>
-            This server is now able to start interacting with Haven based on the
-            permissions you give it. You can run your application with
-            <code>haven run</code>.
-          </p>
-          <img src="assets/images/cli.gif" class="case-study-image" />
-          
-          
-          <h2>5 Building Haven</h2>
-          
-          <p>
-            In section 3.2, we noted that there are three questions you should
-            ask about any secrets manager. The decisions we made and the
-            challenges we faced in building Haven can be described pretty well
-            by answering those questions:
-          </p>
-          <ul>
-            <li>How does it keep your secrets <strong>safe</strong>?</li>
-            <li>How does it let you <strong>share access</strong> safely?</li>
-            <li>
-              How do <strong>applications</strong> actually
-              <strong>get secrets</strong>?
-            </li>
-          </ul>
-          
-
-          <h3>5.1 Keeping your secrets safe</h3>
-          
-          <h4>Solving the “master key” problem</h4>
-          <p>
-            The very notion of encrypting your secrets has an inherent problem:
-            what do you do with the encryption key? Assume you use symmetric
-            encryption, so the encryption key both encrypts and decrypts your
-            secrets. But then that encryption key is itself a secret—and a
-            particularly sensitive one, since it can unlock all of your secrets.
-            You might try to encrypt that key with another key, but that would
-            be yet another key that you have to encrypt.
-          </p>
-          <img
-            src="assets/images/case-study/encryption-problem.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            One way to solve this problem is to have a trusted third-party
-            service store an encryption key that you don’t have physical access
-            to. Instead, you dictate who has permissions to use it to perform
-            encryption and decryption operations. For Haven, that trusted
-            third-party service is the battle-tested AWS Key Management Service
-            (KMS). We use KMS to store this key, which we’ll call a “master
-            key”, and limit encryption/decryption access to it via AWS IAM
-            policies. We don’t need to worry about safely storing this master
-            key since AWS handles that. Now let’s see why “master key” is an
-            appropriate name (hint: it decrypts <em>other</em> encryption keys).
-          </p>
-          
-          <h4>Key wrapping</h4>
-          <p>
-            Key wrapping is an encryption best practice and refers to the
-            technique of using two or more layers of keys to protect your data.
-            It involves generating a unique data encryption key for each secret
-            and encrypting the secret using that encryption key. Then the data
-            encryption key is encrypted by the master encryption key. The
-            encrypted key and encrypted secret are then stored until decrypted
-            later. To decrypt your data, you perform this process in reverse:
-            decrypting the data encryption key with the master key and then
-            using the data encryption key to decrypt your secret data. Key
-            wrapping is also sometimes called envelope encryption.
-          </p>
-          <img
-            src="assets/images/case-study/envelope-encryption.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            Key wrapping has two advantages: first, it’s harder to brute force
-            the encrypted data since each is encrypted using a different key;
-            second, you reduce the attack surface area, because the master key
-            never sees your plaintext data—only plaintext data encryption
-            keys—so an attacker would need access to both your secrets storage
-            and the master key (and in addition, there’s one less instance of
-            your plaintext secrets traveling along the wire). You may be
-            wondering what you do with these encrypted data encryption keys: you
-            store them alongside the encrypted secret itself, often in the same
-            database row.
-          </p>
-          
-          <h4>Implementing encryption best practices</h4>
-          <p>
-            It's a common saying in software that you shouldn't "roll your own
-            crypto"—you should use a vetted cryptographic library. We use the
-            AWS Encryption SDK, a client-side encryption library, because it
-            adheres to cryptography best practices like key wrapping. The AWS
-            Encryption SDK requires a master key, so Haven uses the master key
-            in AWS KMS that it creates for you in initial setup.
-          </p>
-          
-          <p>
-            Haven
-            follows the best practices of encrypting your secrets client-side,
-            in transit, and at rest. When you add or update a secret, it's first encrypted on the client
-            using the SDK and then sent encrypted in transit via TLS to be
-            stored on Amazon DynamoDB, where it is encrypted at rest.
-          </p>
-          
-          <h4>Our encryption scheme as a whole</h4>
-          <img
-            src="assets/images/case-study/haven-envelope-encryption.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            The diagram above shows Haven’s encryption scheme from start to
-            finish. First, to encrypt a datum, a unique data encryption key is
-            generated and is used to encrypt the secret on the client side as
-            seen in the top right. Then, as shown in the top left, that data
-            encryption key is encrypted using the singular master key stored in
-            KMS. Both of these encrypted pieces of information are encrypted in
-            transit via TLS and sent to DynamoDB to be stored alongside each
-            other as shown in the bottom of the diagram. Thus we can see that
-            Haven encrypts your data client side, in transit and at rest up on
-            DynamoDB.
-          </p>
-          
-          <h4>Storing and fetching secrets</h4>
-          <p>
-            As we see below, Haven first makes a request to the AWS encryption
-            SDK library to encrypt a secret. The SDK checks that the caller has
-            the IAM permission to encrypt, and if so, generates a data
-            encryption key, encrypts the secret value with it, and then encrypts
-            the data encryption key with the master key. Then, Haven takes this
-            encrypted data, and (if the user has permission) stores it in the
-            database. Haven also stores the secret’s name, version number and
-            whether the secret is flagged, in that same row.
-          </p>
-          <img
-            src="assets/images/case-study/put-secret.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            When you fetch a secret, Haven first fetches the encrypted secret
-            from the database, then decrypts it using the Encryption SDK.
-          </p>
-          <img
-            src="assets/images/case-study/get-secret.png"
-            class="case-study-image large-image"
-          />
-          
-          <h4>Running the UI web application on localhost</h4>
-          <img
-            src="assets/images/case-study/localhost-ui.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            We chose to run the Admin/Developer UI Dashboard from localhost in order to avoid the security issues that any application running on the public web faces. [7] We were inspired by EnvKey,
-            whose FAQ states:
-          </p>
-          <blockquote>
-            Unfortunately, it's still not possible to implement true
-            zero-knowledge end-to-end encryption on the web. Apart from a
-            fundamental chicken-and-egg problem when it comes to server trust,
-            there's no way to protect against all those ever-so-convenient
-            browser extensions that so many folks have given full-page
-            permissions. [8]
-          </blockquote>
-          <p>
-            A second reason we run the UI app locally is to make it clear that
-            Haven does not have a backend “Haven” server, so we could not snoop
-            on your secrets even if we wanted to.
-          </p>
-          
-          <h3>5.2 Sharing access safely</h3>
-          
-          <h4>Supporting multi-project teams with fine-grained permissions</h4>
-          <p>
-            Enforcing the principle of least privilege is important, and Haven
-            makes this easy by limiting access along three dimensions: by
-            project, environment, and by action, where an action is read-only or
-            read-write.
-          </p>
-          <img
-            src="./assets/images/case-study/fine-grained-permissions.png"
-            class="case-study-image large-image"
-          />
-          <p>
-            Above, we see Sue has read-write access to secrets for project
-            BlueJay in the Dev environment.
-          </p>
-          
-          <h4>Mitigating the "initial credentials" problem</h4>
-          <p>
-            Creating credentials for a new Haven user means creating a new
-            <em>secret</em>. After all, those Haven credentials may permit the
-            ability to read and write secrets! So, how can we ensure that we
-            don't cause our <em>own</em> secret sprawl?
-          </p>
-          
-          <h5>Temporary credentials</h5>
-          <p>
-            Our solution was to create temporary credentials good for only one
-            hour. The credentials don’t have permissions to do anything except
-            request permanent credentials, so the user must ‘change their
-            password’ before they can do anything else. We use an AWS Lambda
-            function to enforce the one-hour limit. If someone doesn’t use their
-            temporary credentials within an hour, the Haven Admin will need to
-            create a new user.
-          </p>
-          
-          <p>
-            The flow is illustrated below: first, the Haven Admin adds a user,
-            either in the UI or the CLI, then Haven downloads a file with
-            temporary credentials and the Haven Admin sends this to the new
-            user. Second, the new user places the Haven file in their home
-            directory and runs <code>haven userSetup</code>. Haven invokes a
-            lambda using those temporary credentials, the lambda checks if
-            they’re still valid, and if so, returns permanent credentials which
-            Haven then puts into the user’s haven file. At this point, the new
-            user would need to tell the Haven Admin that they set up their
-            account, so that the Haven Admin could add them to projects and
-            environments.
-          </p>
-          <img
-            src="assets/images/case-study/user-setup.png"
-            class="case-study-image large-image"
-          />
-          
-          <h4>Revocation of permissions and flagging of secrets</h4>
-          <p>
-            The Haven Admin can easily revoke any permission for any user or
-            even delete users. When a user's permission to some secrets is
-            revoked, the secrets are automatically flagged, and the next time
-            the Haven Admin or a developer uses the UI Dashboard, they will see
-            a red flag next to the secret, indicating they should rotate
-            (change) that secret.
-          </p>
-          
-
-          <h3>5.3 Getting secrets to your applications</h3>
-          <p>
-            Getting secrets to your application should not itself contribute to
-            your secret sprawl, and it should be as easy as possible to do. We
-            settled on an approach similar to what the existing secrets manager
-            SecretHub does.
-          </p>
-          
-          <h4>Secrets injection</h4>
-          <p>
-            SecretHub is a complex secrets manager and there are many ways of
-            using it, but in one way of using SecretHub with your application,
-            SecretHub runs your application as a child process and injects the
-            application’s secrets into that child process as environment
-            variables. [9]
-          </p>
-          
-          <p>
-            Haven works the same way. This has three benefits. First, your
-            application’s secrets aren't stored in a file somewhere on the
-            application server (so no secret sprawl in that regard). Second, due
-            to the nature of child processes, Haven can redact any secrets
-            leaking out on standard output or standard error (we explain how shortly). Finally,
-            this approach makes it easy for the developer: they can simply
-            install the Haven package and change their application’s start
-            command to include <code>haven run</code>.
-          </p>
-          
-          <h4>Why environment variables?</h4>
-          <p>
-            There are pros and cons of using environment variables. A weakness
-            of environment variables is the environment can get leaked or
-            inherited: a logging or debugging tool may dump the environment, or
-            a malicious child process may inherit and read your secrets. [10] But
-            environment variables do have one major security advantage: they die when their
-            process dies. Any environment variables you set for that application
-            are <em>for that process</em> and will disappear once your
-            application stops running—leaving no trace behind, unlike a
-            file. Besides the security advantage, environment variables also have two major
-            pragmatic advantages: 1) they’re language and OS agnostic, and 2) many developers are familiar with them.
-          </p>
-          
-          <p>
-            When we surveyed existing solutions, we noticed that
-            most dedicated secrets managers either permit you to store
-            secrets in environment variables if you want to (e.g. Vault) or just always put
-            secrets into environment variables (e.g. EnvKey). And outside of dedicated
-            secrets managers, if you're using Docker's or Kubernetes's built-in
-            ways of handling secrets, you'll be setting them as environment variables.
-            Since centralization and encryption are arguably far more important for security than whether you use environment variables, and since using them is standard, we decided to use environment
-            variables.
-          </p>
-          
-          <h4>Redacting secrets from an application's standard output and standard error</h4>
-          <p>
-            We wanted to mitigate that risk of environment variables showing up
-            in logs from processes that dump the whole environment. We did so by
-            spawning your application as a child process.
-          </p>
-          
-          <h5>Spawning a child process</h5>
-          <p>
-            A process can simply be thought of as a running program. When you
-            run your application, it runs in a process. The Node.js runtime allows spinning out sub-processes called "child" processes, and Haven uses the spawn method from Node's built-in <code>child_process</code> library. When using the spawn method, you specify the
-            program you want to run and that program is run as a child process.
-            The standard I/O of the child process is piped to and from the parent
-            process: standard input is piped in to the child from the parent, and standard output
-            and standard error are piped out from the child to the parent.
-          </p>
-          <img
-            src="assets/images/case-study/child-process.png"
-            class="case-study-image"
-          />
-          <p>
-            This is what allows us to provide a simple wrapper for your
-            application, making for an easy-to-use secrets manager, as well as
-            what lets us intercept any logging of secrets on standard output and standard error
-            and redact them for extra security.
-          </p>
-          
-          <h5>How it works with your application</h5>
-          <p>
-            So how does this child process technique fit into the bigger
-            picture? In the example shown below, note that <code>todos</code> is the
-            Haven project, <code>prod</code> is the environment and <code>nodemon todos.js</code> is
-            the command that is run by Haven.
-          </p>
-          <img
-            src="assets/images/case-study/redaction.gif"
-            class="case-study-image"
-          />
-          <p>
-            Haven fetches the secrets for the project/environment combination,
-            then spawns a child process via the command you passed to Haven
-            using the spawn method from the Node child process library. The
-            secrets are injected into this child process as environment
-            variables, making them available for the application. Then, as the
-            application runs, Haven intercepts both standard output and standard error, redacts
-            logged secrets, and logs the redacted result.
-          </p>
-          <img
-            src="assets/images/case-study/haven-child-process.png"
-            class="case-study-image large-image"
-          />
-          
-          
-          <h2>6 Future Work</h2>
-          
-          <p>
-            And that's Haven! We're an open-source secrets manager for small teams, with a UI and CLI for easy team management. For our next steps, we plan to add the ability for users to add secrets in bulk from JSON and YAML files. We also plan to add an email integration to make new user creation even smoother.
-          </p>
-          
-          <p>
-            In addition, we plan to support the option for per-secret access controls (rather than per-project access controls), as well as provide direct plug-ins and integrations with select credential providers to support dynamic secrets (i.e., one-time use credentials).
+            The same-origin policy (SOP) states as a general rule that in-page requests made by client-side JavaScript to origins other than the one from which the request is originating are prohibited.
           </p>
           <p>
-          
+            There are long-standing exceptions to the SOP. For example, an image tag can have an src attribute that points to a different origin. The browser will allow that GET request to go out. Another exception, this time concerning the POST method, is the submission of forms cross-origin. Other notable exceptions exist such as the script tag and the retrieval of CSS cross-origin. Except for these specifically carved-out categories, in-page (i.e. requests made by JavaScript in the page) cross-origin requests violate the same-origin policy and are not allowed by the browser.
+          </p>
+          <p>
+            Often, there are legitimate reasons for submitting such requests and browsers now accept Cross-Origin Resource Sharing (CORS) as a standardized way around the same-origin policy. CORS allows servers to decide who can make cross-origin requests to it and what those requests can look like. This is done via the HTTP request and response headers. The browser and the server use these headers to communicate how cross-origin requests should be handled. The server uses the response headers to tell the browser which clients can access its API, which HTTP methods and HTTP headers are allowed, and whether cookies are allowed in the request.
+          </p>
+          <img src="assets/images/manning.jpeg" alt="">
+          <p>credit: https://livebook.manning.com/book/cors-in-action/chapter-1/13</p>
+          <p>
+            The API Gateway is the origin that set the cookie in the first place. When a user first clicked on the promotional link they went to the API Gateway "/beekeeper" endpoint, which triggered a Lambda and set a cookie, and the API Gateway responded from its origin. That means the client now has a cookie on it corresponding or "belonging" to the API Gateway origin.
+          </p>
+          <p>
+            The client-side JS needs to be able to send an AJAX request to the API Gateway. This means origin #2 sending an in-page request to origin #1. That's a violation of the same-origin policy. To allow this CORS request, API Gateway can set the following response headers:
+          </p>
+          <p>
+            <code>
+              'Access-Control-Allow-Credentials': true,
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': '*',
+              'Access-Control-Allow-Methods': '*'
+            </code>
+          </p>
+          <p>
+            Wild cards simply indicate that any and all values are acceptable for that property. Notice that we also allowed credentials to be sent. 
+          </p>
+          <p>
+            On the client-side, if we send the AJAX request with vanilla XHR, we would have to make sure to do the following:
+          </p>
+          <p>
+            <code>
+              const xhr = new XMLHttpRequest();
+              xhr.withCredentials = true;
+            </code>
+          </p>
+          <p>
+            By default, the browser does not include cookies on cross-origin requests. You must specifically tell the browser to include any cookies ("credentials") it has stored for the domain this AJAX request is being sent to. But there is a gotcha here. On the server-side, the Access-Control-Allow-Origin header cannot simply be a wildcard as shown above. When sending credentials cross-origin the specific domain must be listed as the value. So we must specify origin #2 there instead of the wildcard shown above.  
+          </p>
+          <p>
+            Cookies themselves have a same-origin policy slightly different from the same-origin policy for HTTP requests. Each cookie has a path and a domain, and only pages from that path and domain can read the cookie. So while the cookie is included in the CORS request, the browser still honors the cookie’s same-origin policy and keeps the cookie hidden from client code. For this reason, something like the document.cookie property cannot read or write the value. Calling document.cookie from the client in the waiting room will return only the client’s cookies, not the cross-origin cookies from the API Gateway.
+          </p>
+          <p>- https://livebook.manning.com/book/cors-in-action/chapter-5/77</p>
+          <p>
+            Because the cookie belongs to the API Gateway origin and not the S3 bucket origin, we specify two additional properties when setting the cookie. Our code looks like this:
+          </p>
+          <p>
+            <code>
+              Response.headers['Set-Cookie'] = 'authToken=' + token + '; SameSite=None; Secure;';
+            </code>
+          </p>
+          <p>
+            The SameSite attribute tells the browser that it is ok to send the cookies in a third-party context and the Secure property tells the browser to only do so when the scheme is secure, i.e. HTTPS rather than HTTP.
+          </p>
+          <p>
+            As of this writing, Safari presents a further challenge. Cookies for cross-site resources are now blocked by default. Apple is doing this because cookies are used extensively in a third-party context by advertisers for no other purpose except to track users across the Internet.
+- https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/
+          </p>
+          <p>
+            For Beekeeper, this means that if a user is using Safari, either on their mobile device or their desktop, the browser will block the cross-origin request with our cookie. For it to succeed, the user must temporarily enable a setting in Safari which Apple calls "cross-site tracking." On our waiting room page, we include a short description of how users can do this. In response to the pressure Apple and Safari have put on this issue, Chrome has also announced its intention to phase out support for third-party cookies by 2022.
+          </p>
+          <p>
+            Asking users to manually change a setting temporarily in their browser if they are using Safari is not ideal. Safari is a popular browser in a desktop setting and a popular browser in a mobile setting. iOS dominates the mobile market share and mobile market share continues to climb for all use cases, and Safari is the default browser on iOS devices. However, using the alternative query string approach to store the token had significant drawbacks as well. In the end, Beekeeper chose a cookie-based approach because with a future feature discussed below, custom domains with AWS Route53, we can easily generate URLs for the S3 and API Gateway such that they are of the same origin. With a little more work on Seal Brewing's part, the final destination can be of the same origin as well. With the URLs of the same origin, the downsides of the cookie-based approach are effectively mitigated.
+          </p>
+          <p>
+            Let's move on to a piece of the infrastructure we haven't discussed much yet, the SQS queue.
+          </p>
+          <h3>5.6 FIFO Queues</h3>
+          <p>
+            The Producer Lambda generates a random token, sets a cookie with the token, responds to the client, and puts that token in a queue. We decided that a first-come-first-serve approach would satisfy the largest percentage of typical waiting room use cases. This means we're going to want our queue to operate in a first-in-first-out (FIFO) manner. AWS has two options for us, a standard SQS queue that is "best-effort" FIFO and a strictly FIFO queue. What are the trade-offs?
+          </p>
+          <h4>5.6.1 SQS FIFO Queue</h4>
+          <p>
+            Strictly FIFO queues cannot handle as much throughput as standard SQS queues. FIFO queues can handle 300 API calls per second. Different actions represent different API calls so putting something on the queue might be done with SendMessageBatch while reading from the queue might be done with ReceiveMessage. The restriction of 300 calls per second is per those API methods. That means you can have 300 items in and 300 items out per second. AWS also offers batching which means you can batch multiple items from the queue together in a single call. The batching limit is 10. This means FIFO queues can actually handle 3,000 items in and 3,000 items out per second.
+          </p>
+          <p>
+            In sum, the benefit of the FIFO queue is exact ordering and exactly-once delivery into the queue. The cost of the FIFO queue is potentially introducing a bottleneck, where suddenly the capability of the queue is drastically lower than the other components.
+          </p>
+          <h4>5.6.2 SQS Queue</h4>
+          <p>
+            Standard SQS queues have unlimited throughput. But the trade-off is, because of the highly distributed architecture that allows that high throughput, duplicate messages are possible and slightly out of order. Details are scant on what exactly the scope and scale of AWS "best-effort" ordering is and how often duplicates might show up. To analyze the consequences of using a standard queue, suppose we have a user in Sydney, Australia, and a user in Chicago, Illinois. Further suppose the Beekeeper infrastructure was deployed by someone specifying "us-east-2," which is located in Ohio.
+          </p>
+          <p>
+            Because of network latency, we know that the user in Chicago will have a token that gets put in the queue before the user in Sydney. This example assumes extreme amounts of traffic and AWS is creating some duplicates or outright placing some tokens out of order in the queue. The kind of traffic necessary to cause these issues is not known by us, but we suspect it is quite high. Regardless of the level of traffic, we can get clear about some things: the difference is on the order of milliseconds or even microseconds when talking about AWS "best-effort" creating an occasional duplicate or out-of-order placement. With that context firmly in mind, when we think about the user in Chicago and the user in Sydney we are talking about a separation of latency measured in the 100s of milliseconds. The point is this: who was really "first" from a FIFO standpoint? The microseconds or milliseconds involved with slight non-FIFO behavior by AWS are dwarfed by the magnitude of network latency and its role on how "FIFO-like" the queue is. 
+          </p>
+          <p>
+            What about those occasional duplicates? Beekeeper's writes to DynamoDB are idempotent, meaning no matter how many times you take the same action, the result is the same. There is no harm in trying to write the same token to the database twice.
+          </p>
+          <p>
+            For the aforementioned reasons we chose to use a standard SQS queue and benefit from the unlimited throughput it provides. After all, the nature of a virtual waiting room is to handle bursty traffic, and absent obvious downside we didn't want to introduce a bottleneck.
+          </p>
+          <h3>5.7 Throttling Traffic Flow</h3>
+          <p>
+            An integral part of our system is sending users from the waiting room to the origin at a specified rate. To achieve this we needed to finely tune the Consumer Lambdas. AWS provides several options for controlling both the number of available lambdas and the frequency they are invoked. Beekeeper tried three different approaches.
+          </p>
+          <p>
+            Our initial approach utilized a cron job, provided by AWS CloudWatch, to trigger a single Consumer Lambda every minute. Through Simple Queue Services we were able to batch messages in groups of ten and each time a Consumer Lambda was invoked a batch of ten would be polled from the queue, written to the database, and then deleted from the queue (i.e. 1 Consumer Lambda = 10 tokens per minute off the queue). This was accurate, albeit inefficient. Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lamba pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
+          </p>
+          <p>
+            Since we were limited by both the frequency of the cron job (once per minute), and the size of the batch that we can poll from the SQS queue (ten messages), we decided to take a programmatic approach to increase the efficiency of our Consumer Lambda. We implemented a simple loop that runs a number of times determined from the rate Seal Brewing set in the CLI and polls a set number of messages per minute. Instead of scaling the number of Consumer Lambdas, we simply ran the same logic but now for several loops. We were already allotting ample time for our lambdas to execute so extending our loop only helped occupy otherwise wasted time. This approach was accurate as long as the number of loops needed could be completed in time before the Consumer Lambda timed out. Our Consumer Lambdas have 60 seconds to complete their work. From our testing a Consumer Lambda could complete about 150-180 loops, i.e. about 1,500 to 1,800 tokens could be pulled off the queue per minute. The problem was if Seal Brewing selected a rate higher than one Consumer Lambda could handle in 60 seconds, perhaps 3,000 a minute, unexpected behavior would occur. The first Consumer Lambda would try to complete 300 loops, time out, and then re-trigger itself. Because we also configured the Reserve Concurrency for the Consumer Lambdas based on the CLI rate set, another Consumer Lambda would spin up and also try to complete 300 loops. The result was highly inaccurate data above anything more than one Consumer Lambda could handle. This approach scaled but was inaccurate under load.
+          </p>
+          <p>
+            Our third and final approach was simpler. We introduced a new Trigger Lambda which orchestrates how many Consumer Lambdas to invoke and each Consumer Lambda loops a maximum of 100 times. For example, if Seal Brewing selects a rate of 3,300 RPM, the Trigger Lambda will invoke three Consumer Lambdas and pass an argument to each instructing them to complete 100 loops, and a fourth Consumer Lambda with an argument instructing it to do the remaining 30 loops. The Consumer Lambdas can easily finish 100 loops in 60 seconds (usually about 30 seconds). This final approach solves the problems of the first two: it is both 1) scalable, and 2) highly accurate.
+          </p>
+          <p>
+            Beekeeper also allows Seal Brewing to optionally change the rate at which traffic is forwarded on the fly. We use an environmental variable on the Trigger Lambda to hold the rate and this variable can be modified.
+          </p>
+          <h3>5.8 Dynamic Rate Throttling</h3>
+          <p>
+            Beekeeper offers an optional feature in the CLI called Dynamic Rate Throttling. This is a feature that protects Seal Brewing from accidentally choosing a rate that their endpoint cannot handle. At a high level, Beekeeper periodically pings the Seal Brewing endpoint and if the average response time degrades to something worse than three (3) standard deviations from an initial baseline check, we slow the rate down.
+          </p>
+          <p>
+            Beekeeper achieves this functionality by utilizing an extra Lamba we call the dynamic rate throttling (DRT) lambda. This extra lambda would tune the rate of our Consumer Lambda based on the latency of the client's endpoint. We modeled our DRT lambda off of a governor model introduced in <mark>link this thing</mark> Release It! by Michael T. Nygard.
+          </p>
+          <p>
+            Going back to our example: Seal Brewing has set up their wait room and specified a rate.  Everything is going great for the first couple of minutes but customers are taking longer than expected to checkout and now the number of concurrent users on their site is increasing and throwing the health of their servers in jeopardy.
+          </p>
+          <p>
+            In the above case, the Consumer Lambda has no judgment. It will continue to send users to the site and by the time things go wrong, it might be too late for human intervention. This is where the governor design pattern presented by Release It! comes in. A programmatic governor limits the speed of a system much like the governor in a fancy sports car will prevent a driver from damaging an engine or exceeding some legal limit. Choosing a lambda to run our DRT logic posed an issue. A governor must be stateful and time-aware. A lambda is neither. To give our DRT lambda statefulness we record its actions in our DynamoDB. Before the DRT lambda takes action it first reads from the database. The DRT lambda compares the current latency of the client endpoint to the baseline latency.  If the client endpoint is failing this test the DRT lambda throttles the Consumer Lambda rate. Alternatively, if there is a history of rate throttling and the health of the system is passing, the DRT lambda will slowly increase the rate of the Consumer Lambda back toward the starting rate.
+          </p>
+          <p>
+            Changing the rate too far or too fast in one direction is bad. We want to avoid changing the rate to zero or increasing the rate back to an unsafe level. Our DRT lambda has built-in logic that decreases the amount it can change as it moves farther in one direction. The lambda also takes a slower approach to increasing the rate after a throttle than it does performing a throttle.
+          </p>
+          <mark>insert graph image for DRT</mark>
+          <p>
+            The above graph shows how the DRT Lambda would change the rate of the Consumer Lambda (CL rate) as the latency of the endpoint surpasses a statistically derived threshold. The baseline is set by averaging the endpoint latency over a sample set of 20 requests. The upper threshold is set as three times the standard deviation of this sample set. The endpoint latency is calculated by taking another sample of twenty requests and finding their mean. In this way, we ensure that the rate won't be throttled by a few random high latency requests. When a test of the endpoint latency crosses the upper threshold the CL rate is reduced by 50%. When the endpoint latency again crosses below the upper threshold the CL rate is gradually increased at a rate of 25% of the difference from the original CL Rate and current CL rate.
+          </p>
+          <h3>5.9 Load Testing</h3>
+          <mark>load testing image in here somewhere</mark>
+          <p>
+            Load testing a deployed waiting room infrastructure posed a unique set of challenges.  Our project relies heavily on the capacity and elasticity of AWS. To fully test our deployment we would need to load test at levels approaching the capacity of AWS components. This is not an easy feat seeing as those limits could approach 10,000 queries per second. Using an open-source load testing package (artillery.io) and four different computers we were able to simulate around 140 requests per second. From this amount, we were able to extrapolate. Most of AWS's services have inherent upper limits at some point. For example, the API Gateway has a limit of 10,000 RPS and the S3 bucket has a maximum of 5,500 GET RPS. Similarly, the SQS has a near unlimited throughput. There is no reason to test those. Lambdas, however, are limited to 1,000 per region. Our specific area of inquiry was to figure out what level of traffic would max out the Lambdas.
+          </p>
+          <p>
+            The results of our load test over a period of 8 minutes show that the Producer Lambda has an average total duration time of roughly 160 milliseconds. This duration time consists of both the cold start time and the lambda invocation time. A lambda cold start happens when AWS needs to provision a container so that it can execute a lambda function and this happens on the first request that comes in after deployment or in the case when all the other containers are being used and there are no other available ones.
+          </p>
+          <p>
+            Once we identified the Producer Lambda's average total duration time of 160ms, we were able to estimate that the number of times the lambda can execute per second is around 6.25 (1,000 / 160). This means that if the maximum number of concurrent lambdas allowed is 1000, then the maximum requests per second Beekeeper can handle before it uses up all the available lambdas is 6,250 RPS (assuming no Producer Lambdas).
+          </p>
+          <h3>5.10 Bottlenecks</h3>
+          <p>
+            It's worth remembering that the point of all this load testing and bottleneck discussion is to figure out how much traffic Beekeeper can handle. Without that, we do not know what Beekeeper's target use case is. Below is a diagram of some of the AWS limitations of the infrastructure pieces that Beekeeper uses. At a glance, you can tell that the DynamoDB, API Gateway, and SQS have a much higher capacity compared to the S3 bucket and Lambda. These are not potential bottlenecks.
+          </p>
+          <mark>image insert</mark>
+          <p>
+            A bottleneck occurs when the capacity of a system is limited by a single component. As discussed above, Beekeeper maxes out the 1,000 Lambda limit around an estimated 6,250 RPS. And as can be seen in the chart, the S3 bucket can handle 5,500 GET RPS per prefix. Therefore, our bottleneck is the S3 bucket and potentially the lambdas because that is only an estimate. If the number of visitors to the API Gateway exceeds 6,250 RPS, then both the Producer Lambda and S3 bucket will be throttled.
+          </p>
+          <mark>insert image</mark>
+          <p>
+            To unblock the Producer Lambda bottleneck, Seal Brewing can simply contact Amazon to raise its lambda concurrency limit free of charge. How much this can be raised remains unclear but anecdotal reports exist for raising the amount by 3-5x free of charge. To unblock the S3 bucket bottleneck, we can distribute the requests and s3 objects to multiple prefixes or multiple S3 buckets. A prefix is any string between the bucket name and an s3 object name.
+          </p>
+          <h3>5.11 How Much Traffic Can Beekeeper Handle?</h3>
+          <p>
+            In summary, Beekeeper can handle about 5,500 requests per second coming in based on the S3 Bucket bottleneck and we found this to be an appropriate number for our desired use case. How fast can Seal Brewing specify they would like traffic forwarded? It depends. If Seal Brewing specifies 270,000 RPM we need to divide by 1,000 to get 270 Consumer Lambdas needed. Remember, a Consumer Lambda can handle 1,000 RPM (we capped at 100 loops doing 10 each loop). 1,000 Lambdas minus 270 leaves 730 for the Producer Lambda. We know each Producer Lambda can do 6.25 requests per second based on the 160ms average duration which is 375 RPM (6.25 x 60).
+          </p>
+          <p>
+            Seal Brewing said they wanted traffic forwarded to them at 270,000 per minute. For that to be possible the system needs to handle at least that fast of a rate on the way in. 270,000 RPM / 375 per minute equals 720 Producer Lambdas needed to handle the traffic in. 720 Producer Lambdas plus 270 Consumer Lambdas = 990 total Lambdas. Beekeeper also uses one Trigger Lambda and one DRT Lamba. 1,000 minus 992 used means we have 8 remaining lambdas as a buffer in that scenario.
+          </p>
+          <p>
+            Therefore, the maximum rate that Seal Brewing could select in the CLI, under any scenario, is about 270,000 RPM, i.e. 4,500 RPS. 4,500 RPS is nearly as fast as Beekeeper itself can handle. It's extremely unlikely that anyone would want traffic forwarded this fast.
+          </p>
+          <p>
+            What is Seal Brewing had a popular event that maxed out Beekeeper at 5,500 RPS coming in. What's the fastest they could forward that traffic at to their endpoint? 880 Producer Lambdas would be needed to handle 5,500 RPS coming. That leaves 220 remaining for the Consumer Lambdas, minus two for the Trigger Lambda and DRT Lambda (218). We know each Consumer Lambda can pull 1,000 tokens a minute, therefore 218,000 RPM minute or about 2,000 RPS is the maximum rate Seal Brewing could set in the CLI.
+          </p>
+          <p>
+            Our team cannot anticipate realistic use cases ever wanting traffic forwarded that fast. Therefore, the best way to describe Beekeeper's limits would be 5,550 RPS coming in and a user of the tool like Seal Brewing can forward that traffic at any rate starting at 10 RPM up to essentially as fast as they would like.
+          </p>
+          <p>
+            In conclusion, Beekeeper is perhaps not suitable for the largest of events like a Sony Playstation release or an Apple product event, but it is certainly not limited to only small or medium-sized events either. Considering that the final endpoint may have one or more actions that need to be taken once there, if Beekeeper didn't slow that traffic down it would quickly accumulate a large number of concurrent users at that rate. Within a minute's time span Seal Brewing could have 300,000 concurrent users on their site if they wanted.
+          </p>
+          <h2>6 Future Features</h2>
+          <h3>6.1 Branded Waiting Room Experience</h3>
+          <p>
+            One of Beekeeper's current features is a CLI option whereby the user specifies what name they'd like to appear on the waiting room page. This is to avoid confusion and let the waiting room visitor know they're in the right place. A good next step would be to allow Seal Brewing to upload their logo and perhaps upload their own HTML and CSS for a completely branded waiting room experience.
+          </p>
+          <p>
+            Taking things even further, we could set up the ability through Amazon Route53 to create custom domains for both the promotional URL link and the waiting room page link. These could be separate endpoints on the Seal Brewing origin. Doing so would eliminate the complications of CORS requests discussed previously. However, it would be a much more difficult implementation for Seal Brewing and we would have to take care to craft a user guide to walk through configuration and the necessary DNS changes on their end.
+          </p>
+          <p>
+          <h3>6.2 Bot Protection</h3>
+          <p>
+            Our waiting room is accessed via a link. This link could be accessed by some malicious actor that decided to flood the URL with GET requests putting a lot of tokens in the queue and creating an unusually long waiting room experience for genuine visitors. AWS has a service called Web Application Firewall, or WAF, that can set rules such as IP throttling and could be added to Beekeeper’s architecture to prevent this type of malicious action.
+          </p>
+          <h3>6.3 WebSockets: Push Versus Pull</h3>
+          <p>
+            Beekeeper implements a polling approach from the waiting room to check whether a given site visitor is allowed to redirect to the final destination. Instead of polling for the status of their token, we could implement WebSockets and push this information. We would maintain an open connection to the waiting room after initially establishing it and when a token is written to DynamoDB an event would fire triggering a Lambda that could push that information to the waiting room. Polling involves some wasteful HTTP request/response cycles, especially when we might already know based on the number of people in line and the rate at which they're leaving the queue that it could be quite some time until this particular client is up in the queue.
+          </p>
           
           <h2>7 References</h2>
-          
+          <p>leaving one example of a reference in from what Haven did. We need to sprinkle our references in.</p>
           <p class="footnote">
             [1] <a
               href="https://www.hashicorp.com/resources/introduction-vault-whiteboard-armon-dadgar" class="footnote"
               >https://www.hashicorp.com/resources/introduction-vault-whiteboard-armon-dadgar</a
             >
           </p>
-          <p class="footnote">
-            [2] <a
-              href="https://www.ndss-symposium.org/wp-content/uploads/2019/02/ndss2019_04B-3_Meli_paper.pdf" class="footnote"
-              >https://www.ndss-symposium.org/wp-content/uploads/2019/02/ndss2019_04B-3_Meli_paper.pdf</a
-            >
-          </p>
-          <p class="footnote">
-            [3] <a
-              href="https://www.digitalocean.com/blog/update-on-the-april-5th-2017-outage/" class="footnote"
-              >https://www.digitalocean.com/blog/update-on-the-april-5th-2017-outage/</a
-            >
-          </p>
-          <p class="footnote">
-            [4] <a href="https://www.capitalone.com/facts2019/" class="footnote"
-              >https://www.capitalone.com/facts2019/</a
-            >
-          </p>
-          <p class="footnote">
-            [5] <a href="https://12factor.net/config" class="footnote"
-              >https://12factor.net/config</a
-            >
-          </p>
-          <p class="footnote">
-            [6] <a href="https://www.vaultproject.io/docs/internals/architecture" class="footnote"
-              >https://www.vaultproject.io/docs/internals/architecture</a
-            >
-          </p>
-          <p class="footnote">
-            [6] <a href="https://en.wikipedia.org/wiki/Web_application_security#Security_threats" class="footnote"
-              >https://en.wikipedia.org/wiki/Web_application_security#Security_threats</a
-            >
-          </p>
-          <p class="footnote">
-            [8] <a href="https://www.envkey.com/faq/" class="footnote"
-              >https://www.envkey.com/faq/</a
-            >
-          </p>
-          <p class="footnote">
-            [9] <a href="https://secrethub.io/docs/guides/environment-variables/" class="footnote"
-              >https://secrethub.io/docs/guides/environment-variables/</a
-            >
-          </p>
-          <p class="footnote">
-            [10] <a
-              href="https://www.honeybadger.io/blog/securing-environment-variables/" class="footnote"
-              >https://www.honeybadger.io/blog/securing-environment-variables/</a
-            >
-          </p>
-          
-          
+  
           <h2>The Team</h2>
-          
-          
           <div class="section team-section">
             <div class="container">
               <div
