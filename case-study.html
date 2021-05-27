@@ -83,7 +83,7 @@
           <p>
             A virtual waiting room reduces the traffic sent to an endpoint below a set capacity over a period of time. The role of a waiting room is to “flatten the curve.”
           </p>
-          <img src="assets/images/capacity.png" alt="linegraph">
+          <img src="assets/images/case-study/capacity.png" alt="linegraph">
           <h3>2.3 How To Get a Virtual Waiting Room</h3>
           <p>
             A virtual waiting room seems like it fits the use case nicely, but how can Seal Brewing get one?
@@ -111,7 +111,7 @@
           <p>
             As mentioned, Beekeeper is an open-sourced BaaS built for organizations that have one-off promotions involving a dynamic event, are constrained by existing infrastructure or time and effort, and prefer to own their solution rather than purchase off the shelf from a third-party. Let's look at where BaaS sits on a spectrum of possibilities:
           </p>
-          <img src="assets/images/abtract_v_control.png" alt="BaaS" style="padding: 2em 0 2em 0;">
+          <img src="assets/images/case-study/abtract_v_control.png" alt="BaaS" style="padding: 2em 0 2em 0;">
           <p>
             Developers deploying an application to bare metal servers must account for every part of the software stack, all the way down to hardware selection. Infrastructure as a Service (IaaS) abstracts away hardware concerns, leaving developers responsible for setting up the entire runtime environment including the operating system.
           </p>
@@ -138,7 +138,7 @@
           <p>
             Beekeeper is an NPM package used to automate an infrastructure built on top of AWS services. We'll get into the basics of how you use the NPM package soon but for now, let's see what Seal Brewing gets with Beekeeper.
           </p>
-          <img src="assets/images/infrastructure.png" alt="infrastructure diagram" style="padding: 2em 0 2em 0;">
+          <img src="assets/images/case-study/infrastructure.png" alt="infrastructure diagram" style="padding: 2em 0 2em 0;">
           <p>
             Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. The following steps describe the flow of the infrastructure:
           </p>
@@ -223,7 +223,7 @@
           <p>
             When we first started designing Beekeeper we began with an infrastructure based on a waiting room in an S3 bucket on a CloudFront distribution. However, we still needed some logic in a Lambda and the only way to trigger a Lambda with that approach was using one of the CloudFront triggers AWS offers. That approach lacked flexibility because triggering a Lambda with a CloudFront trigger in our original design only allows logic to take place in the Lambda code. This means a Lambda must be used for every kind of request. Instead, we chose to use a different service offered by AWS called API Gateway. API Gateway is more flexible and powerful. Here's what the interface looks like in the AWS console:
           </p>
-          <img src="assets/images/api-gateway-screenshot.png" alt="api Gateway screenschot" style="padding: 2em 0 2em 0;">
+          <img src="assets/images/case-study/api-gateway-screenshot.png" alt="api Gateway screenschot" style="padding: 2em 0 2em 0;">
           <p>
             What makes API Gateway powerful is how it provides an opportunity to perform checks and modify data at different stages of the HTTP request/response cycle. After a request from a client comes in, actions can be taken at both the Method Request and Integration Request stage before the request even gets to the Lambda being triggered. After the Lambda completes and passes the response back to the API Gateway, actions can be taken at both the Integration and Method Response stages before finally, the API Gateway sends a response back to the client.
           </p>
@@ -286,8 +286,9 @@
             Our current implementation is a cookie-based approach but let's evaluate using query string parameters first. Instead of the Producer Lambda setting a cookie, it could have set query parameters that contained the token like so:
           </p>
           <p>
-            <code>https://beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com/index.html?token=7483928</code>
+            <code>https://beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com/index.html?token=7ght63</code>
           </p>
+          <img src="assets/images/case-study/query-string-tracking.png" alt="FIFO v Standard Queue" style="padding: 2em 0 2em 0;">
           <p>
             Now the client would be sitting in the waiting room with query parameters tacked onto the URL. When the client-side JS makes an AJAX request to "/polling", those query parameters would need to be sent along, too. That can be done with client-side JavaScript like this:
           </p>
@@ -337,7 +338,7 @@
           <p>
             Often, there are legitimate reasons for submitting such requests and browsers now accept Cross-Origin Resource Sharing (CORS) as a standardized way around the same-origin policy. CORS allows servers to decide who can make cross-origin requests to it and what those requests can look like. This is done via the HTTP request and response headers. The browser and the server use these headers to communicate how cross-origin requests should be handled. The server uses the response headers to tell the browser which clients can access its API, which HTTP methods and HTTP headers are allowed, and whether cookies are allowed in the request.
           </p>
-          <img src="assets/images/manning.jpeg" alt="">
+          <img src="assets/images/case-study/manning.jpeg" alt="manning jpeg">
           <p>credit: https://livebook.manning.com/book/cors-in-action/chapter-1/13</p>
           <p>
             The API Gateway is the origin that set the cookie in the first place. When a user first clicked on the promotional link they went to the API Gateway "/beekeeper" endpoint, which triggered a Lambda and set a cookie, and the API Gateway responded from its origin. That means the client now has a cookie on it corresponding or "belonging" to the API Gateway origin.
@@ -390,7 +391,7 @@
           <p>
             For Beekeeper, this means that if a user is using Safari, either on their mobile device or their desktop, the browser will block the cross-origin request with our cookie. For it to succeed, the user must temporarily enable a setting in Safari which Apple calls "cross-site tracking." On our waiting room page, we include a short description of how users can do this. In response to the pressure Apple and Safari have put on this issue, Chrome has also announced its intention to phase out support for third-party cookies by 2022.
           </p>
-          <img src="assets/images/CORS_2.png" alt="CORS-error diagram" style="padding: 2em 0 2em 0;">
+          <img src="assets/images/case-study/CORS_2.png" alt="CORS-error diagram" style="padding: 2em 0 2em 0;">
           <p>
             Asking users to manually change a setting temporarily in their browser if they are using Safari is not ideal. Safari is a popular browser in a desktop setting and a popular browser in a mobile setting. iOS dominates the mobile market share and mobile market share continues to climb for all use cases, and Safari is the default browser on iOS devices. However, using the alternative query string approach to store the token had significant drawbacks as well. In the end, Beekeeper chose a cookie-based approach because with a future feature discussed below, custom domains with AWS Route53, we can easily generate URLs for the S3 and API Gateway such that they are of the same origin. With a little more work on Seal Brewing's part, the final destination can be of the same origin as well. With the URLs of the same origin, the downsides of the cookie-based approach are effectively mitigated.
           </p>
@@ -409,7 +410,7 @@
             In sum, the benefit of the FIFO queue is exact ordering and exactly-once delivery into the queue. The cost of the FIFO queue is potentially introducing a bottleneck, where suddenly the capability of the queue is drastically lower than the other components.
           </p>
           <h4>5.6.2 SQS Queue</h4>
-          <img src="assets/images/fifo-v-std.png" alt="FIFO v Standard Queue" style="padding: 2em 0 2em 0;">
+          <img src="assets/images/case-study/fifo-v-std.png" alt="FIFO v Standard Queue" style="padding: 2em 0 2em 0;">
           <p>
             Standard SQS queues have unlimited throughput. But the trade-off is, because of the highly distributed architecture that allows that high throughput, duplicate messages are possible and slightly out of order. Details are scant on what exactly the scope and scale of AWS "best-effort" ordering is and how often duplicates might show up. To analyze the consequences of using a standard queue, suppose we have a user in Sydney, Australia, and a user in Chicago, Illinois. Further suppose the Beekeeper infrastructure was deployed by someone specifying "us-east-2," which is located in Ohio.
           </p>
@@ -442,6 +443,7 @@
           <p>
             Beekeeper offers an optional feature in the CLI called Dynamic Rate Throttling. This is a feature that protects Seal Brewing from accidentally choosing a rate that their endpoint cannot handle. At a high level, Beekeeper periodically pings the Seal Brewing endpoint and if the average response time degrades to something worse than three (3) standard deviations from an initial baseline check, we slow the rate down.
           </p>
+          <img src="assets/images/case-study/auto_tune.png" alt="Dynamic Rate Throttling" style="padding: 2em 0 2em 0;">
           <p>
             Beekeeper achieves this functionality by utilizing an extra Lamba we call the dynamic rate throttling (DRT) lambda. This extra lambda would tune the rate of our Consumer Lambda based on the latency of the client's endpoint. We modeled our DRT lambda off of a governor model introduced in <mark>link this thing</mark> Release It! by Michael T. Nygard.
           </p>
@@ -454,7 +456,7 @@
           <p>
             Changing the rate too far or too fast in one direction is bad. We want to avoid changing the rate to zero or increasing the rate back to an unsafe level. Our DRT lambda has built-in logic that decreases the amount it can change as it moves farther in one direction. The lambda also takes a slower approach to increasing the rate after a throttle than it does performing a throttle.
           </p>
-          <mark>insert graph image for DRT</mark>
+          <img src="assets/images/case-study/drt-graph.png" alt="Dynamic Rate Throttling Graph" style="padding: 2em 0 2em 0;">
           <p>
             The above graph shows how the DRT Lambda would change the rate of the Consumer Lambda (CL rate) as the latency of the endpoint surpasses a statistically derived threshold. The baseline is set by averaging the endpoint latency over a sample set of 20 requests. The upper threshold is set as three times the standard deviation of this sample set. The endpoint latency is calculated by taking another sample of twenty requests and finding their mean. In this way, we ensure that the rate won't be throttled by a few random high latency requests. When a test of the endpoint latency crosses the upper threshold the CL rate is reduced by 50%. When the endpoint latency again crosses below the upper threshold the CL rate is gradually increased at a rate of 25% of the difference from the original CL Rate and current CL rate.
           </p>
