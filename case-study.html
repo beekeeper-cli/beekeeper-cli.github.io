@@ -111,7 +111,7 @@
           <p>
             As mentioned, Beekeeper is an open-sourced BaaS built for organizations that have one-off promotions involving a dynamic event, are constrained by existing infrastructure or time and effort, and prefer to own their solution rather than purchase off the shelf from a third-party. Let's look at where BaaS sits on a spectrum of possibilities:
           </p>
-          <img src="assets/images/BaaS.png" alt="BaaS">
+          <img src="assets/images/abtract_v_control.png" alt="BaaS" style="padding: 2em 0 2em 0;">
           <p>
             Developers deploying an application to bare metal servers must account for every part of the software stack, all the way down to hardware selection. Infrastructure as a Service (IaaS) abstracts away hardware concerns, leaving developers responsible for setting up the entire runtime environment including the operating system.
           </p>
@@ -138,7 +138,7 @@
           <p>
             Beekeeper is an NPM package used to automate an infrastructure built on top of AWS services. We'll get into the basics of how you use the NPM package soon but for now, let's see what Seal Brewing gets with Beekeeper.
           </p>
-          <img src="assets/images/infrastructure.png" alt="infrastructure diagram">
+          <img src="assets/images/infrastructure.png" alt="infrastructure diagram" style="padding: 2em 0 2em 0;">
           <p>
             Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. The following steps describe the flow of the infrastructure:
           </p>
@@ -221,8 +221,9 @@
           </p>
           <h3>5.2 Choosing API Gateway</h3>
           <p>
-            When we first started designing Beekeeper we began with an infrastructure based on a waiting room in an S3 bucket on a CloudFront distribution. However, we still needed some logic in a Lambda and the only way to trigger a Lambda with that approach was using one of the CloudFront triggers AWS offers. That approach lacked flexibility because triggering a Lambda with a CloudFront trigger in our original design only allows logic to take place in the Lambda code. This means a Lambda must be used for every kind of request. Instead, we chose to use a different service offered by AWS called API Gateway. API Gateway is more flexible and powerful. Here's what the interface looks like in the AWS console: <mark>[insert some image]</mark>
+            When we first started designing Beekeeper we began with an infrastructure based on a waiting room in an S3 bucket on a CloudFront distribution. However, we still needed some logic in a Lambda and the only way to trigger a Lambda with that approach was using one of the CloudFront triggers AWS offers. That approach lacked flexibility because triggering a Lambda with a CloudFront trigger in our original design only allows logic to take place in the Lambda code. This means a Lambda must be used for every kind of request. Instead, we chose to use a different service offered by AWS called API Gateway. API Gateway is more flexible and powerful. Here's what the interface looks like in the AWS console:
           </p>
+          <img src="assets/images/api-gateway-screenshot.png" alt="api Gateway screenschot" style="padding: 2em 0 2em 0;">
           <p>
             What makes API Gateway powerful is how it provides an opportunity to perform checks and modify data at different stages of the HTTP request/response cycle. After a request from a client comes in, actions can be taken at both the Method Request and Integration Request stage before the request even gets to the Lambda being triggered. After the Lambda completes and passes the response back to the API Gateway, actions can be taken at both the Integration and Method Response stages before finally, the API Gateway sends a response back to the client.
           </p>
@@ -233,7 +234,7 @@
           <p>
             Lambas have an option to be triggered as a proxy integration. Choosing a proxy integration means that API Gateway will forward the unmodified request in its entirety to the Lambda code. Not choosing proxy integration means that the API Gateway can make modifications to the request, such as creating and transforming data, and then sending that modified data to the Lambda. We use proxy integration and trigger a Lambda (Producer Lambda) for new users hitting the initial endpoint. The Producer Lambda checks the incoming request's headers for the existence of the cookie and if it's not present, the Producer Lambda generates a token and creates a response header setting a cookie with that token in it. The Producer Lambda then sets other headers relating to Content-Type, Location, and various Access-Control-Allow headers. The Producer Lambda also sets the response status code to 302 indicating a redirect. Once this custom object is formed, the Producer Lambda responds to API Gateway with it via the proxy integration and API Gateway in turn responds to the client causing a redirect to the waiting room URL which is an endpoint representing the static asset in S3.
           </p>
-          <h4>5.2.2 "/Polling" Endpoint and "/client" Endpoint</h4>
+          <h4>5.2.2 "/polling" Endpoint and "/client" Endpoint</h4>
           <p>
             This is where API Gateway became very useful. Client-side JavaScript in the S3 bucket (the waiting room) polls this endpoint every 20 seconds with AJAX requests. API Gateway needs to query the database but that is simple enough logic that AWS allows us to do it without triggering a Lambda. Instead, AWS empowers API Gateway to directly query a database.
           </p>
@@ -389,6 +390,7 @@
           <p>
             For Beekeeper, this means that if a user is using Safari, either on their mobile device or their desktop, the browser will block the cross-origin request with our cookie. For it to succeed, the user must temporarily enable a setting in Safari which Apple calls "cross-site tracking." On our waiting room page, we include a short description of how users can do this. In response to the pressure Apple and Safari have put on this issue, Chrome has also announced its intention to phase out support for third-party cookies by 2022.
           </p>
+          <img src="assets/images/CORS_2.png" alt="CORS-error diagram" style="padding: 2em 0 2em 0;">
           <p>
             Asking users to manually change a setting temporarily in their browser if they are using Safari is not ideal. Safari is a popular browser in a desktop setting and a popular browser in a mobile setting. iOS dominates the mobile market share and mobile market share continues to climb for all use cases, and Safari is the default browser on iOS devices. However, using the alternative query string approach to store the token had significant drawbacks as well. In the end, Beekeeper chose a cookie-based approach because with a future feature discussed below, custom domains with AWS Route53, we can easily generate URLs for the S3 and API Gateway such that they are of the same origin. With a little more work on Seal Brewing's part, the final destination can be of the same origin as well. With the URLs of the same origin, the downsides of the cookie-based approach are effectively mitigated.
           </p>
@@ -407,6 +409,7 @@
             In sum, the benefit of the FIFO queue is exact ordering and exactly-once delivery into the queue. The cost of the FIFO queue is potentially introducing a bottleneck, where suddenly the capability of the queue is drastically lower than the other components.
           </p>
           <h4>5.6.2 SQS Queue</h4>
+          <img src="assets/images/fifo-v-std.png" alt="FIFO v Standard Queue" style="padding: 2em 0 2em 0;">
           <p>
             Standard SQS queues have unlimited throughput. But the trade-off is, because of the highly distributed architecture that allows that high throughput, duplicate messages are possible and slightly out of order. Details are scant on what exactly the scope and scale of AWS "best-effort" ordering is and how often duplicates might show up. To analyze the consequences of using a standard queue, suppose we have a user in Sydney, Australia, and a user in Chicago, Illinois. Further suppose the Beekeeper infrastructure was deployed by someone specifying "us-east-2," which is located in Ohio.
           </p>
