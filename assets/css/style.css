@@ -1586,6 +1586,7 @@ a:hover {
 }
 
 .navigation-wrap {
+  overflow: hidden;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -1598,7 +1599,7 @@ a:hover {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center;
-  width: 92%;
+  /* width: 92%; */
   /* background-color: rgba(255, 255, 255, 0.25);
   border-bottom: 5px solid rgba(0,0,0,0.5); */
 }
