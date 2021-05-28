@@ -168,6 +168,8 @@ figcaption {
 
 .section-container .header {
   padding-top: 55px;
+  overflow:hidden;
+
 }
 
 .team-container {
