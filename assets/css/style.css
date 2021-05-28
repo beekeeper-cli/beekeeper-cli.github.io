@@ -66,6 +66,11 @@ b {
   font-weight: 700;
 }
 
+code { 
+  white-space: pre;
+  font-size: 0.7em;
+}
+
 h1 {
   font-size: 50px;
   margin: 0.67em 0;
