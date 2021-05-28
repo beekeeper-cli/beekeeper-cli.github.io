@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>commands/destroy.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-addPostLambdaEventPermission.html">addPostLambdaEventPermission</a><ul class='methods'><li data-type='method'><a href="module-addPostLambdaEventPermission.html#~addLambdaPermission">addLambdaPermission</a></li><li data-type='method'><a href="module-addPostLambdaEventPermission.html#~createTarget">createTarget</a></li></ul></li><li><a href="module-config.html">config</a></li><li><a href="module-createRole.html">createRole</a><ul class='methods'><li data-type='method'><a href="module-createRole.html#~addPermissions">addPermissions</a></li><li data-type='method'><a href="module-createRole.html#~attachPolicy">attachPolicy</a></li><li data-type='method'><a href="module-createRole.html#~createRole">createRole</a></li></ul></li><li><a href="module-deploy.html">deploy</a></li><li><a href="module-deployApiGateway.html">deployApiGateway</a><ul class='methods'><li data-type='method'><a href="module-deployApiGateway.html#~createApiGateway">createApiGateway</a></li><li data-type='method'><a href="module-deployApiGateway.html#~createResource">createResource</a></li><li data-type='method'><a href="module-deployApiGateway.html#~getResources">getResources</a></li><li data-type='method'><a href="module-deployApiGateway.html#~mainPutMethodRequest">mainPutMethodRequest</a></li><li data-type='method'><a href="module-deployApiGateway.html#~setIntegrationRequest">setIntegrationRequest</a></li><li data-type='method'><a href="module-deployApiGateway.html#~setIntegrationResponse">setIntegrationResponse</a></li><li data-type='method'><a href="module-deployApiGateway.html#~setMethodResponse">setMethodResponse</a></li></ul></li><li><a href="module-deployClientCheckRoute.html">deployClientCheckRoute</a><ul class='methods'><li data-type='method'><a href="module-deployClientCheckRoute.html#~createResource">createResource</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~deployResource">deployResource</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~getResources">getResources</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~putMethodRequest">putMethodRequest</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~setIntegrationRequest">setIntegrationRequest</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~setIntegrationResponse">setIntegrationResponse</a></li><li data-type='method'><a href="module-deployClientCheckRoute.html#~setMethodResponse">setMethodResponse</a></li></ul></li><li><a href="module-deployCloudwatchEvent.html">deployCloudwatchEvent</a><ul class='methods'><li data-type='method'><a href="module-deployCloudwatchEvent.html#~createCloudWatchEventRule">createCloudWatchEventRule</a></li></ul></li><li><a href="module-deployDlq.html">deployDlq</a><ul class='methods'><li data-type='method'><a href="module-deployDlq.html#~createDLQ">createDLQ</a></li><li data-type='method'><a href="module-deployDlq.html#~getArn">getArn</a></li></ul></li><li><a href="module-deployDynamo.html">deployDynamo</a><ul class='methods'><li data-type='method'><a href="module-deployDynamo.html#~createDynamo">createDynamo</a></li></ul></li><li><a href="module-deployPollingRoute.html">deployPollingRoute</a><ul class='methods'><li data-type='method'><a href="module-deployPollingRoute.html#~createResource">createResource</a></li><li data-type='method'><a href="module-deployPollingRoute.html#~getResources">getResources</a></li><li data-type='method'><a href="module-deployPollingRoute.html#~putMethodRequest">putMethodRequest</a></li><li data-type='method'><a href="module-deployPollingRoute.html#~setIntegrationRequest">setIntegrationRequest</a></li><li data-type='method'><a href="module-deployPollingRoute.html#~setIntegrationResponse">setIntegrationResponse</a></li><li data-type='method'><a href="module-deployPollingRoute.html#~setMethodResponse">setMethodResponse</a></li></ul></li><li><a href="module-deployPollingS3Object.html">deployPollingS3Object</a><ul class='methods'><li data-type='method'><a href="module-deployPollingS3Object.html#~uploadToS3">uploadToS3</a></li></ul></li><li><a href="module-deployPostLambda.html">deployPostLambda</a><ul class='methods'><li data-type='method'><a href="module-deployPostLambda.html#~createPostLambda">createPostLambda</a></li><li data-type='method'><a href="module-deployPostLambda.html#~setLambdaConcurrency">setLambdaConcurrency</a></li></ul></li><li><a href="module-deployPreLambda.html">deployPreLambda</a><ul class='methods'><li data-type='method'><a href="module-deployPreLambda.html#~addLambdaPermission">addLambdaPermission</a></li><li data-type='method'><a href="module-deployPreLambda.html#~createPreLambda">createPreLambda</a></li></ul></li><li><a href="module-deployS3.html">deployS3</a><ul class='methods'><li data-type='method'><a href="module-deployS3.html#~createBucket">createBucket</a></li><li data-type='method'><a href="module-deployS3.html#~uploadToS3">uploadToS3</a></li></ul></li><li><a href="module-deploySqs.html">deploySqs</a><ul class='methods'><li data-type='method'><a href="module-deploySqs.html#~createSQS">createSQS</a></li></ul></li><li><a href="module-destroy.html">destroy</a></li><li><a href="module-destroyApiGateway.html">destroyApiGateway</a><ul class='methods'><li data-type='method'><a href="module-destroyApiGateway.html#~destroyRestApi">destroyRestApi</a></li><li data-type='method'><a href="module-destroyApiGateway.html#~getApiId">getApiId</a></li></ul></li><li><a href="module-destroyCloudwatchEvent.html">destroyCloudwatchEvent</a><ul class='methods'><li data-type='method'><a href="module-destroyCloudwatchEvent.html#~destroyCloudwatchEvent">destroyCloudwatchEvent</a></li><li data-type='method'><a href="module-destroyCloudwatchEvent.html#~destroyCloudwatchTarget">destroyCloudwatchTarget</a></li></ul></li><li><a href="module-destroyDynamo.html">destroyDynamo</a><ul class='methods'><li data-type='method'><a href="module-destroyDynamo.html#~destroyTable">destroyTable</a></li></ul></li><li><a href="module-destroyLambda.html">destroyLambda</a><ul class='methods'><li data-type='method'><a href="module-destroyLambda.html#~destroyLambda">destroyLambda</a></li></ul></li><li><a href="module-destroyRole.html">destroyRole</a><ul class='methods'><li data-type='method'><a href="module-destroyRole.html#~destroyRole">destroyRole</a></li><li data-type='method'><a href="module-destroyRole.html#~detachPermissions">detachPermissions</a></li><li data-type='method'><a href="module-destroyRole.html#~detachPolicy">detachPolicy</a></li></ul></li><li><a href="module-destroyS3.html">destroyS3</a><ul class='methods'><li data-type='method'><a href="module-destroyS3.html#~deleteBucket">deleteBucket</a></li><li data-type='method'><a href="module-destroyS3.html#~deleteBucketObjects">deleteBucketObjects</a></li><li data-type='method'><a href="module-destroyS3.html#~listBucketObjects">listBucketObjects</a></li></ul></li><li><a href="module-destroySQS.html">destroySQS</a><ul class='methods'><li data-type='method'><a href="module-destroySQS.html#~destroyQueue">destroyQueue</a></li><li data-type='method'><a href="module-destroySQS.html#~getQueueUrl">getQueueUrl</a></li></ul></li><li><a href="module-init.html">init</a></li><li><a href="module-logger.html">logger</a><ul class='methods'><li data-type='method'><a href="module-logger.html#~debugError">debugError</a></li><li data-type='method'><a href="module-logger.html#~debugSuccess">debugSuccess</a></li><li data-type='method'><a href="module-logger.html#~error">error</a></li><li data-type='method'><a href="module-logger.html#~failDeploy">failDeploy</a></li><li data-type='method'><a href="module-logger.html#~help">help</a></li><li data-type='method'><a href="module-logger.html#~highlight">highlight</a></li></ul></li><li><a href="module-promptQuestions.html">promptQuestions</a><ul class='methods'><li data-type='method'><a href="module-promptQuestions.html#~promptQuestions">promptQuestions</a></li></ul></li><li><a href="module-retry.html">retry</a></li><li><a href="module-setRate.html">setRate</a><ul class='methods'><li data-type='method'><a href="module-setRate.html#~getLambdaConfig">getLambdaConfig</a></li><li data-type='method'><a href="module-setRate.html#~updateLambdaConfig">updateLambdaConfig</a></li><li data-type='method'><a href="module-setRate.html#~validateRate">validateRate</a></li></ul></li><li><a href="module-toggle.html">toggle</a><ul class='methods'><li data-type='method'><a href="module-toggle.html#~getLambdaConfig">getLambdaConfig</a></li><li data-type='method'><a href="module-toggle.html#~updateLambdaConfig">updateLambdaConfig</a></li></ul></li><li><a href="module-utilities.html">utilities</a><ul class='methods'><li data-type='method'><a href="module-utilities.html#~createFile">createFile</a></li><li data-type='method'><a href="module-utilities.html#~fileExists">fileExists</a></li><li data-type='method'><a href="module-utilities.html#~getContentType">getContentType</a></li><li data-type='method'><a href="module-utilities.html#~getFilePaths">getFilePaths</a></li><li data-type='method'><a href="module-utilities.html#~readFile">readFile</a></li><li data-type='method'><a href="module-utilities.html#~validateInitRan">validateInitRan</a></li><li data-type='method'><a href="module-utilities.html#~validateProfileName">validateProfileName</a></li></ul></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">commands/destroy.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Destroys a waiting room infrastructure.
+ * @module destroy
+ */
+
+const path = require("path");
+const logger = require("../utils/logger")("dev");
+const { readFile, validateInitRan, validateProfileName } = require("../utils/utilities");
+const chalk = require("chalk");
+const ora = require("ora");
+
+const destroyRole = require("../aws/destroy/destroyRole");
+const destroyLambda = require("../aws/destroy/destroyLambda");
+const destroySQS = require("../aws/destroy/destroySQS");
+const destroyDynamo = require("../aws/destroy/destroyDynamo");
+const destroyCloudwatchEvent = require("../aws/destroy/destroyCloudwatchEvent");
+const destroyS3 = require("../aws/destroy/destroyS3");
+const destroyApiGateway = require("../aws/destroy/destroyApiGateway");
+
+const ANSWERS_FILE_PATH = path.join(
+  __dirname,
+  "..",
+  "config",
+  "user-answers.json"
+);
+
+/**
+ * The destroy command combines all of the destroy modules and invokes them with the required parameters.
+ * @param {string} profileName The profile to destroy
+ * @returns {undefined}
+ */
+
+module.exports = async (profileName) => {
+  const initRan = await validateInitRan(ANSWERS_FILE_PATH);
+  if (!initRan) return;
+  
+  const profiles = JSON.parse(await readFile(ANSWERS_FILE_PATH));
+  const validProfileName = validateProfileName(profileName, profiles, "destroy");
+  if (!validProfileName) return;
+
+  const {[profileName] : { PROFILE_NAME, REGION }} = profiles;
+  const S3_NAME = `beekeeper-${PROFILE_NAME}-s3`
+  const DLQ_NAME = `beekeeper-${PROFILE_NAME}-dlq`
+  const SQS_NAME = `beekeeper-${PROFILE_NAME}-sqs`
+  const DYNAMO_NAME = `beekeeper-${PROFILE_NAME}-ddb`
+  const API_GATEWAY_NAME = `beekeeper-${PROFILE_NAME}-apigateway`
+  const POST_LAMBDA_NAME = `beekeeper-${PROFILE_NAME}-postlambda`
+  const PRE_LAMBDA_NAME = `beekeeper-${PROFILE_NAME}-prelambda`
+  const ROLE_NAME = `beekeeper-${PROFILE_NAME}-master-role`
+  const CRON_JOB_NAME = `beekeeper-${PROFILE_NAME}-cloudwatcheventcron`
+  const spinner = ora();
+  let warn = false;
+
+  logger.highlight('🐝  Destroying waiting room infrastructure');
+  console.log("")
+  
+  try {
+    spinner.start("Destroying IAM role")
+    await destroyRole(REGION, ROLE_NAME);
+    spinner.succeed("Successfully destroyed IAM role")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (IAM role) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying post-lambda")
+    await destroyLambda(REGION, POST_LAMBDA_NAME);
+    spinner.succeed("Successfully destroyed post-lambda")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (post-lambda) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying pre-lambda")
+    await destroyLambda(REGION, PRE_LAMBDA_NAME);
+    spinner.succeed("Successfully destroyed pre-lambda")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (pre-lambda) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying DLQ")
+    await destroySQS(REGION, DLQ_NAME);
+    spinner.succeed("Successfully destroyed DLQ")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (DLQ) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying SQS")
+    await destroySQS(REGION, SQS_NAME);
+    spinner.succeed("Successfully destroyed SQS")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (SQS) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying DynamoDB")
+    await destroyDynamo(REGION, DYNAMO_NAME);
+    spinner.succeed("Successfully destroyed DynamoDB")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (DynamoDB) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying Cloudwatch Event")
+    await destroyCloudwatchEvent(REGION, CRON_JOB_NAME);
+    spinner.succeed("Successfully destroyed Cloudwatch Event")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (Cloudwatch Event) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying S3 Bucket")
+    await destroyS3(REGION, S3_NAME);
+    spinner.succeed("Successfully destroyed S3 Bucket")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (S3 Bucket) " + err.message.split(":")[0])
+  }
+
+  try {
+    spinner.start("Destroying API Gateway")
+    await destroyApiGateway(REGION, API_GATEWAY_NAME);
+    spinner.succeed("Successfully destroyed API Gateway")
+  } catch (err) {
+    warn = true;
+    spinner.warn("Warning: (API Gateway) " + err.message.split(":")[0])
+  }
+
+  console.log("")
+  
+  if (warn) {
+    console.log(`Note: It's normal to see "${chalk.yellow.bold("⚠")} Warning" if that piece of the infrastructure has not been deployed yet.`)
+    console.log("")
+  }
+  logger.highlight(`${chalk.green.bold("✔")} Successfully destroyed waiting room infrastructure`);
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Mon May 03 2021 14:37:19 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
