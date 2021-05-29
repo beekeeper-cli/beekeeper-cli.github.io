@@ -455,12 +455,33 @@
           <p>
             An integral part of our system is sending users from the waiting room to the origin at a specified rate. To achieve this we needed to finely tune the Consumer Lambdas. AWS provides several options for controlling both the number of available lambdas and the frequency they are invoked. Beekeeper tried three different approaches.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/first_throttle.png" alt="CRON Job Throttle AWS Lambda">
+          </div>
           <p>
-            Our initial approach utilized a cron job, provided by AWS CloudWatch, to trigger a single Consumer Lambda every minute. Through Simple Queue Services we were able to batch messages in groups of ten and each time a Consumer Lambda was invoked a batch of ten would be polled from the queue, written to the database, and then deleted from the queue (i.e. 1 Consumer Lambda = 10 tokens per minute off the queue). This was accurate, albeit inefficient. Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lamba pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
+            Our initial approach utilized a cron job, provided by AWS CloudWatch, to trigger a single Consumer Lambda every minute. Through Simple Queue Services we were able to batch messages in groups of ten and each time a Consumer Lambda was invoked a batch of ten would be polled from the queue, written to the database, and then deleted from the queue (i.e. 1 Consumer Lambda = 10 tokens per minute off the queue). This was accurate, albeit inefficient.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/lambda_pool.png" alt="Lambda pool of 1000 concurrency limit">
+          </div>
+          <p>
+            Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lamba pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
+          </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/lambda_loop.png" alt="Consumer lambda using a for loop">
+          </div>
           <p>
             Since we were limited by both the frequency of the cron job (once per minute), and the size of the batch that we can poll from the SQS queue (ten messages), we decided to take a programmatic approach to increase the efficiency of our Consumer Lambda. We implemented a simple loop that runs a number of times determined from the rate Seal Brewing set in the CLI and polls a set number of messages per minute. Instead of scaling the number of Consumer Lambdas, we simply ran the same logic but now for several loops. We were already allotting ample time for our lambdas to execute so extending our loop only helped occupy otherwise wasted time. This approach was accurate as long as the number of loops needed could be completed in time before the Consumer Lambda timed out. Our Consumer Lambdas have 60 seconds to complete their work. From our testing a Consumer Lambda could complete about 150-180 loops, i.e. about 1,500 to 1,800 tokens could be pulled off the queue per minute. The problem was if Seal Brewing selected a rate higher than one Consumer Lambda could handle in 60 seconds, perhaps 3,000 a minute, unexpected behavior would occur. The first Consumer Lambda would try to complete 300 loops, time out, and then re-trigger itself. Because we also configured the Reserve Concurrency for the Consumer Lambdas based on the CLI rate set, another Consumer Lambda would spin up and also try to complete 300 loops. The result was highly inaccurate data above anything more than one Consumer Lambda could handle. This approach scaled but was inaccurate under load.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/trigger-lambda.png" alt="Trigger lambda starts every 60 seconds by cloudwatch event">
+          </div>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/trigger-lambda-2.png" alt="Trigger lambda starts consumer lambda">
+          </div>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/trigger-lambda-3.png" alt="Consumer lambda consumes from SQS">
+          </div>
           <p>
             Our third and final approach was simpler. We introduced a new Trigger Lambda which orchestrates how many Consumer Lambdas to invoke and each Consumer Lambda loops a maximum of 100 times. For example, if Seal Brewing selects a rate of 3,300 RPM, the Trigger Lambda will invoke three Consumer Lambdas and pass an argument to each instructing them to complete 100 loops, and a fourth Consumer Lambda with an argument instructing it to do the remaining 30 loops. The Consumer Lambdas can easily finish 100 loops in 60 seconds (usually about 30 seconds). This final approach solves the problems of the first two: it is both 1) scalable, and 2) highly accurate.
           </p>
