@@ -162,6 +162,9 @@
           <p>
             Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. The following steps describe the flow of the infrastructure:
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-1-2.png" alt="infrastructure diagram step 1 and 2">
+          </div>
           <p>
             <strong>Step 1: A user visits a promotion URL.</strong>
             Seal Brewing is going to run its promotional sale. They'll install and deploy the Beekeeper NPM package, provide a couple of pieces of information such as the final destination URL that the waiting room should forward to and at what rate. After deploying Beekeeper, Seal Brewing will get a generated URL to use for their promotion.
@@ -170,25 +173,57 @@
             <strong>Step 2: Visiting the promotion URL hits the API Gateway.</strong>
             When the user clicks the URL, their browser is sending a GET request for a resource. That HTTP request to an endpoint is handled by the API Gateway and that endpoint triggers a Lambda. We call this the "/beekeeper" endpoint.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-3.png" alt="infrastructure diagram step 3">
+          </div>
           <p>
             <strong>Step 3: The Producer Lambda is triggered.</strong>
             A Lambda is a container that AWS spins up with your specified runtime environment, dependencies, and code in it. It’s a serverless compute service that runs code without having to provision resources or manage servers. The logic in the Producer Lambda does a few things. It first checks if the incoming request headers already have our cookie. If the incoming request does not have a cookie, a few additional steps take place. First, the Lambda generates a random token value. Second, the token is placed in a queue (SQS). Third, a cookie is set on the client with this token in it. Fourth, a response header is set that tells the browser when it receives the HTTP response from the API Gateway to redirect the client to the waiting room URL. This waiting room URL consists of static assets; an HTML file with JavaScript and CSS held in an AWS S3 bucket. We'll come back to this waiting room in the S3 bucket, but for now, let's continue by talking about what happens after the token gets put in the queue.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-4.png" alt="infrastructure diagram step 4">
+          </div>
           <p>
             <strong>Step 4: The Consumer Lambda pulls from the SQS queue.</strong>
             A grouping of Consumer Lambdas work to pull these tokens off the queue at a specific rate. The Consumer Lambdas take tokens off the queue and write them to the DynamoDB. This is how Beekeeper controls the rate of traffic flow.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-5.png" alt="infrastructure diagram step 5">
+          </div>
           <p>
             <strong>Step 5: The token is written to the DynamoDB.</strong>
             Now that the Consumer Lambda has pulled off a given token it writes an object to the DynamoDB containing the token, the current date, and a property indicating with a boolean value whether this token is allowed to redirect to the waiting room.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-6.png" alt="infrastructure diagram step 6">
+          </div>
           <p>
             <strong>Step 6: The waiting room in the S3 bucket polls the API Gateway.</strong>
             The waiting room has client-side JavaScript sending AJAX requests to an endpoint on the API Gateway every 20 seconds. We call this the "/polling" endpoint. Instead of triggering a Lambda, the API Gateway pulls off the cookie from the incoming request to get the token and directly queries the DynamoDB to check if the token is in there.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-7.png" alt="infrastructure diagram step 7">
+          </div>
           <p>
             <strong>Step 7: Query DynamoDB to see if the token is in there yet.</strong>
-            This is how we decide when to let a user get redirected from the waiting room to the final destination. If the token is in the database the API Gateway responds with an object with two properties "allow": "true" and "origin": "[https://www.sealbrewing.com]". The browser checks the "allow" property and if it is truthy the browser redirects the user to the URL provided in the "origin" property. If the token is not in the database, the API Gateway responds with an object with one property, "allow": "false" and the polling continues every 20 seconds while the user waits.
+            This is how we decide when to let a user get redirected from the waiting room to the final destination. If the token is in the database, the API Gateway responds with an object with two properties:
+            <pre><code>
+  {
+    "allow": "true",
+    "origin": "https://www.sealbrewing.com"
+  }
+            </code></pre>
+          </p>
+          <p>
+             The browser checks the "allow" property and if it is truthy the browser redirects the user to the URL provided in the "origin" property. If the token is not in the database, the API Gateway responds with an object with one property:
+             <pre><code>
+  {
+    "allow": "false"
+  }
+            </code></pre>
+          </p>
+          <p>
+            and the polling continues every 20 seconds while the user waits.
           </p>
           <p>
             <strong>Step 8 (Optional): The final destination performs a check to make sure the user didn't skip the waiting room.</strong>
@@ -352,7 +387,16 @@
             </li>
           </ol>
           <p>
-            For two URLs to be considered the same origin they must have the same scheme, host, and port. Note that the URLs in #1 and #2 above differ in that they do not have exact matching hosts; the host of #1 is <code>p0xoaomdfe.execute-api.us-east-2.amazonaws.com</code> while the host of #2 is <code>beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com</code>.
+            For two URLs to be considered the same origin they must have the same scheme, host, and port. Note that the URLs in #1 and #2 above differ in that they do not have exact matching hosts. The host of #1 is:
+             <pre><code>
+  p0xoaomdfe.execute-api.us-east-2.amazonaws.com
+              </code></pre>
+          </p>
+          <p>
+            while the host of #2 is:
+            <pre><code>
+  beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com
+            </code></pre>
           </p>
           <h4>5.5.1 How Do The Same-Origin Policy and CORS Affect Beekeeper?</h4>
           <p>
