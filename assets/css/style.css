@@ -208,7 +208,7 @@ figcaption {
   display: flex;
   margin: 0 auto;
   max-width: 1400px;
-  width: 92%;
+  width: 100%;
 }
 
 .section-container .header {
