@@ -302,10 +302,19 @@
             There are five places to take action; two after the request but before the Lambda, in the Lambda itself, and two after the Lambda but before the response goes back. As described below, API Gateway allows us to skip the use of a Lambda for the "/polling" route. Given that AWS sets a 1,000 concurrency limit on the number of Lambdas that can be allocated in a given region, avoiding the use of Lambdas is beneficial because it allows capacity to be retained that can be used elsewhere in the infrastructure. This means the infrastructure as a whole can handle more traffic.
           </p>
           <h4>5.2.1 "/beekeeper" Endpoint</h4>
+          <pre><code>
+  https://mn7wdl9e89.execute-api.us-east-2.amazonaws.com/prod/beekeeeper
+          </code></pre>
           <p>
             Lambas have an option to be triggered as a proxy integration. Choosing a proxy integration means that API Gateway will forward the unmodified request in its entirety to the Lambda code. Not choosing proxy integration means that the API Gateway can make modifications to the request, such as creating and transforming data, and then sending that modified data to the Lambda. We use proxy integration and trigger a Lambda (Producer Lambda) for new users hitting the initial endpoint. The Producer Lambda checks the incoming request's headers for the existence of the cookie and if it's not present, the Producer Lambda generates a token and creates a response header setting a cookie with that token in it. The Producer Lambda then sets other headers relating to Content-Type, Location, and various Access-Control-Allow headers. The Producer Lambda also sets the response status code to 302 indicating a redirect. Once this custom object is formed, the Producer Lambda responds to API Gateway with it via the proxy integration and API Gateway in turn responds to the client causing a redirect to the waiting room URL which is an endpoint representing the static asset in S3.
           </p>
           <h4>5.2.2 "/polling" Endpoint and "/client" Endpoint</h4>
+          <pre><code>
+  https://mn7wdl9e89.execute-api.us-east-2.amazonaws.com/prod/polling
+          </code></pre>
+          <pre><code>
+  https://mn7wdl9e89.execute-api.us-east-2.amazonaws.com/prod/client
+          </code></pre>
           <p>
             This is where API Gateway became very useful. Client-side JavaScript in the S3 bucket (the waiting room) polls this endpoint every 20 seconds with AJAX requests. API Gateway needs to query the database but that is simple enough logic that AWS allows us to do it without triggering a Lambda. Instead, AWS empowers API Gateway to directly query a database.
           </p>
