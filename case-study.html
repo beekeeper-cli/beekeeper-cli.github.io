@@ -234,14 +234,28 @@
           <p>
             To set up a Beekeeper waiting room, Seal Brewing must have an AWS account, set their access keys, download the AWS CLI, and have Node and NPM installed on their machine. Once those preliminary steps are finished, deploying a virtual waiting room takes just a few minutes to set up and is torn down in seconds. 
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-commands/beekeeper-init.png" alt="beekeeper init command">
+          </div>
           <p>
             It is possible to set up as many virtual waiting rooms. For each one, Seal Brewing will be asked six questions such as the name they want publicly displayed on the waiting room page, the AWS region where the infrastructure is deployed, the endpoint of the event, and the rate at which traffic should be sent from the waiting room to that endpoint.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-commands/beekeeper-deploy.png" alt="beekeeper deploy command">
+          </div>
           <p>
             Deploying the waiting room builds up all the required components and permissions. Once the build is done two URLs are generated; the waiting room URL is put in the promotional emails and social media posts and the client check endpoint can optionally be utilized by Seal Brewing to prevent people from skipping the queue.
           </p>
+          <div class="case-study-image" >
+            <img src="assets/images/case-study/beekeeper-commands/beekeeper-off.png" alt="beekeeper off command">
+          </div>
           <p>
-            If the waiting room is no longer needed but the advertising links are still being used the waiting room can be turned off and visitors will redirect to Seal Brewing's endpoint directly, skipping the waiting room. When finished with the waiting room entirely is can be torn down in seconds with a simple command. Detailed instructions for using Beekeeper can be found in our <a href="https://www.npmjs.com/package/beekeeper-cli" target="_blank" rel="noopener noreferrer">README</a>.
+            If the waiting room is no longer needed but the advertising links are still being used the waiting room can be turned off and visitors will redirect to Seal Brewing's endpoint directly, skipping the waiting room.
+          </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-commands/beekeeper-destroy.png" alt="beekeeper destroy command">
+          </div>
+          <p> When finished with the waiting room entirely is can be torn down in seconds with a simple command. Detailed instructions for using Beekeeper can be found in our <a href="https://www.npmjs.com/package/beekeeper-cli" target="_blank" rel="noopener noreferrer">README</a>.
           </p>
         
           <h2>5. Engineering Decisions and Trade-Offs</h2>

@@ -526,6 +526,7 @@ label {
   position: relative;
   background: #ffffff;
   padding: 10px;
+  text-align: center;
 }
 
 .case-study-image::before {
