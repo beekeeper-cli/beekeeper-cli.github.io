@@ -494,6 +494,9 @@
             The Producer Lambda generates a random token, sets a cookie with the token, responds to the client, and puts that token in a queue. We decided that a first-come-first-serve approach would satisfy the largest percentage of typical waiting room use cases. This means we're going to want our queue to operate in a first-in-first-out (FIFO) manner. AWS has two options for us, a standard SQS queue that is "best-effort" FIFO and a strictly FIFO queue. What are the trade-offs?
           </p>
           <h4>5.6.1 SQS FIFO Queue</h4>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/fifo-v-std_1.png" alt="FIFO Queue Behavior">
+          </div>
           <p>
             Strictly FIFO queues cannot handle as much throughput as standard SQS queues. FIFO queues can handle 300 API calls per second. Different actions represent different API calls so putting something on the queue might be done with SendMessageBatch while reading from the queue might be done with ReceiveMessage. The restriction of 300 calls per second is per those API methods. That means you can have 300 items in and 300 items out per second. AWS also offers batching which means you can batch multiple items from the queue together in a single call. The batching limit is 10. This means FIFO queues can actually handle 3,000 items in and 3,000 items out per second.
           </p>
@@ -502,7 +505,7 @@
           </p>
           <h4>5.6.2 SQS Queue</h4>
           <div class="case-study-image">
-            <img src="assets/images/case-study/fifo-v-std.png" alt="FIFO v Standard Queue">
+            <img src="assets/images/case-study/fifo-v-std_2.png" alt="Standard Queue Behavior">
           </div>
           <p>
             Standard SQS queues have unlimited throughput. But the trade-off is, because of the highly distributed architecture that allows that high throughput, duplicate messages are possible and slightly out of order. Details are scant on what exactly the scope and scale of AWS "best-effort" ordering is and how often duplicates might show up. To analyze the consequences of using a standard queue, suppose we have a user in Sydney, Australia, and a user in Chicago, Illinois. Further suppose the Beekeeper infrastructure was deployed by someone specifying "us-east-2," which is located in Ohio.
