@@ -304,11 +304,11 @@
           </p>
           <h4>5.2.2 <code>/polling </code> and <code> /client</code></h4>
           <p>
-            This is where API Gateway became very useful. Client-side JavaScript in the S3 bucket (the waiting room) polls this endpoint every 20 seconds with AJAX requests. API Gateway needs to query the database but that is simple enough logic that AWS allows us to do it without triggering a Lambda. Instead, AWS empowers API Gateway to directly query a database.
+            Our <code>/polling</code> and <code>/client</code> routes serve as direct proxies to our DynamoDB.  The database is queried from either the waiting room site (S3 Bucket) or the client endpoint.  The logic is simple enough that we don’t need to use a lambda.
           </p>
           <h4>5.2.3 Directly Querying DynamoDB and VTL</h4>
           <p>
-            A request comes in from the client-side JS and API Gateway directly queries DynamoDB to check for the token. This time we did not use proxy integration, meaning we took advantage of the Integration Request and Integration Response stages in the diagram above to access and transform data. This is done using AWS Mapping Templates, which in turn use Apache Velocity Template Language (VTL).
+            A request comes in from the client-side JS and API Gateway directly queries DynamoDB to check for the token. This time we did not use proxy integration and instead took advantage of API Gateway’s ability to access and transform the request/response cycle. This is done using AWS Mapping Templates, which in turn use Apache Velocity Template Language (VTL).
           </p>
           <p>
             Mapping Templates and the VTL syntax allow us to get access to information about the request, like parameters or headers. We're dealing with an HTTP request and DynamoDB does not speak HTTP; it expects to be communicated with in a specific syntax. With VTL we can access a cookie off the headers of the HTTP request and then format a JSON object with this data in a syntax DynamoDB expects to receive. In other words, we can get the information we need to make a proper query to the database directly from API Gateway.
