@@ -418,7 +418,7 @@
             There are long-standing exceptions to the SOP. For example, an image tag can have an src attribute that points to a different origin. The browser will allow that GET request to go out. Another exception, this time concerning the POST method, is the submission of forms cross-origin. Other notable exceptions exist such as the script tag and the retrieval of CSS cross-origin. Except for these specifically carved-out categories, in-page (i.e. requests made by JavaScript in the page) cross-origin requests violate the same-origin policy and are not allowed by the browser.
           </p>
           <p>
-            Often, there are legitimate reasons for submitting such requests and browsers now accept Cross-Origin Resource Sharing (CORS) as a standardized way around the same-origin policy. CORS allows servers to decide who can make cross-origin requests to it and what those requests can look like. This is done via the HTTP request and response headers. The browser and the server use these headers to communicate how cross-origin requests should be handled. The server uses the response headers to tell the browser which clients can access its API, which HTTP methods and HTTP headers are allowed, and whether cookies are allowed in the request.<sup><a href="#3">3</a></sup>
+            Often, there are legitimate reasons for submitting such requests and browsers now accept Cross-Origin Resource Sharing (CORS) as a standardized way around the same-origin policy. CORS allows servers to decide who can make cross-origin requests to it and what those requests can look like. This is done via the HTTP request and response headers. The browser and the server use these headers to communicate how cross-origin requests should be handled. The server uses the response headers to tell the browser which clients can access its API, which HTTP methods and HTTP headers are allowed, and whether cookies are allowed in the request<sup><a href="#3">3</a></sup>.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/manning.jpeg" alt="manning jpeg">
@@ -449,9 +449,8 @@
             By default, the browser does not include cookies on cross-origin requests. You must specifically tell the browser to include any cookies ("credentials") it has stored for the domain this AJAX request is being sent to. But there is a gotcha here. On the server-side, the Access-Control-Allow-Origin header cannot simply be a wildcard as shown above. When sending credentials cross-origin the specific domain must be listed as the value. So we must specify origin #2 there instead of the wildcard shown above.  
           </p>
           <p>
-            Cookies themselves have a same-origin policy slightly different from the same-origin policy for HTTP requests. Each cookie has a path and a domain, and only pages from that path and domain can read the cookie. So while the cookie is included in the CORS request, the browser still honors the cookie’s same-origin policy and keeps the cookie hidden from client code. For this reason, something like the document.cookie property cannot read or write the value. Calling document.cookie from the client in the waiting room will return only the client’s cookies, not the cross-origin cookies from the API Gateway.
+            Cookies themselves have a same-origin policy slightly different from the same-origin policy for HTTP requests. Each cookie has a path and a domain, and only pages from that path and domain can read the cookie. So while the cookie is included in the CORS request, the browser still honors the cookie’s same-origin policy and keeps the cookie hidden from client code. For this reason, something like the document.cookie property cannot read or write the value. Calling document.cookie from the client in the waiting room will return only the client’s cookies, not the cross-origin cookies from the API Gateway<sup><a href="#3">3</a></sup>.
           </p>
-          <p>- https://livebook.manning.com/book/cors-in-action/chapter-5/77</p>
           <p>
             Because the cookie belongs to the API Gateway origin and not the S3 bucket origin, we specify two additional properties when setting the cookie. Our code looks like this:
           </p>
@@ -462,8 +461,7 @@
             The SameSite attribute tells the browser that it is ok to send the cookies in a third-party context and the Secure property tells the browser to only do so when the scheme is secure, i.e. HTTPS rather than HTTP.
           </p>
           <p>
-            As of this writing, Safari presents a further challenge. Cookies for cross-site resources are now blocked by default. Apple is doing this because cookies are used extensively in a third-party context by advertisers for no other purpose except to track users across the Internet.
-- https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/
+            As of this writing, Safari presents a further challenge. Cookies for cross-site resources are now blocked by default. Apple is doing this because cookies are used extensively in a third-party context by advertisers for no other purpose except to track users across the Internet<sup><a href="#5">5</a></sup>.
           </p>
           <p>
             For Beekeeper, this means that if a user is using Safari, either on their mobile device or their desktop, the browser will block the cross-origin request with our cookie. For it to succeed, the user must temporarily enable a setting in Safari which Apple calls "cross-site tracking." On our waiting room page, we include a short description of how users can do this. In response to the pressure Apple and Safari have put on this issue, Chrome has also announced its intention to phase out support for third-party cookies by 2022.
@@ -640,13 +638,8 @@
           <p class="footnote" id="2">[2] <a href="https://aws.amazon.com/dynamodb/dax/">https://aws.amazon.com/dynamodb/dax/</a></p>
           <p class="footnote" id="3">[3] <a href="https://livebook.manning.com/book/cors-in-action/chapter-1/13">https://livebook.manning.com/book/cors-in-action/chapter-1/13</a></p>
           <p class="footnote" id="4">[4] <a href="https://pragprog.com/titles/mnee2/release-it-second-edition/">https://pragprog.com/titles/mnee2/release-it-second-edition/</a></p>
-          <!-- <p class="footnote">
-            [1] <a
-              href="https://www.hashicorp.com/resources/introduction-vault-whiteboard-armon-dadgar" class="footnote"
-              >https://www.hashicorp.com/resources/introduction-vault-whiteboard-armon-dadgar</a
-            >
-          </p> -->
-  
+          <p class="footnote" id="5">[5] <a href="https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/">https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/</a></p>
+ 
           <h2>Our Team</h2>
           <div class="section team-section">
             <div class="container">
