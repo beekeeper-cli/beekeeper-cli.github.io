@@ -162,9 +162,6 @@
           <p>
             Beekeeper consists of five (5) distinct AWS services: API Gateway, S3, Lambda, SQS, and DynamoDB. The following steps describe the flow of the infrastructure:
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-1-2.png" alt="infrastructure diagram step 1 and 2">
-          </div>
           <p>
             <strong>Step 1: A user visits a promotion URL.</strong>
             Seal Brewing is going to run its promotional sale. They'll install and deploy the Beekeeper NPM package, provide a couple of pieces of information such as the final destination URL that the waiting room should forward to and at what rate. After deploying Beekeeper, Seal Brewing will get a generated URL to use for their promotion.
@@ -174,35 +171,35 @@
             When the user clicks the URL, their browser is sending a GET request for a resource. That HTTP request to an endpoint is handled by the API Gateway and that endpoint triggers a Lambda. We call this the "/beekeeper" endpoint.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-3.png" alt="infrastructure diagram step 3">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-1-2.png" alt="infrastructure diagram step 1 and 2">
           </div>
           <p>
             <strong>Step 3: The Producer Lambda is triggered.</strong>
             A Lambda is a container that AWS spins up with your specified runtime environment, dependencies, and code in it. It is a serverless compute service that runs code without having to provision resources or manage servers. The logic in the Producer Lambda does a few things. It first checks if the incoming request headers already have our cookie. If the incoming request does not have a cookie, a few additional steps take place. First, the Lambda generates a random token value. Second, the token is placed in a queue (SQS). Third, a cookie is set on the client with this token in it. Fourth, a response header is set that tells the browser when it receives the HTTP response from the API Gateway to redirect the client to the waiting room URL. This waiting room URL consists of static assets; an HTML file with JavaScript and CSS held in an AWS S3 bucket. We'll come back to this waiting room in the S3 bucket, but for now, let's continue by talking about what happens after the token gets put in the queue.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-4.png" alt="infrastructure diagram step 4">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-3.png" alt="infrastructure diagram step 3">
           </div>
           <p>
             <strong>Step 4: The Consumer Lambda pulls from the SQS queue.</strong>
             A grouping of Consumer Lambdas work to pull these tokens off the queue at a specific rate. The Consumer Lambdas take tokens off the queue and write them to the DynamoDB. This is how Beekeeper controls the rate of traffic flow.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-5.png" alt="infrastructure diagram step 5">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-4.png" alt="infrastructure diagram step 4">
           </div>
           <p>
             <strong>Step 5: The token is written to the DynamoDB.</strong>
             Now that the Consumer Lambda has pulled off a given token it writes an object to the DynamoDB containing the token, the current date, and a property indicating with a boolean value whether this token is allowed to redirect to the waiting room.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-6.png" alt="infrastructure diagram step 6">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-5.png" alt="infrastructure diagram step 5">
           </div>
           <p>
             <strong>Step 6: The waiting room in the S3 bucket polls the API Gateway.</strong>
             The waiting room has client-side JavaScript sending AJAX requests to an endpoint on the API Gateway every 20 seconds. We call this the "/polling" endpoint. Instead of triggering a Lambda, the API Gateway pulls off the cookie from the incoming request to get the token and directly queries the DynamoDB to check if the token is in there.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-7.png" alt="infrastructure diagram step 7">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-6.png" alt="infrastructure diagram step 6">
           </div>
           <p>
             <strong>Step 7: Query DynamoDB to see if the token is in there yet.</strong>
@@ -225,6 +222,9 @@
           <p>
             and the polling continues every 20 seconds while the user waits.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-7.png" alt="infrastructure diagram step 7">
+          </div>
           <p>
             <strong>Step 8 (Optional): The final destination performs a check to make sure the user didn't skip the waiting room.</strong>
             Without this step, notice how a user could technically skip the waiting room. Here's how it might happen: one user clicks on the promotional link, goes through the whole process outlined above, and makes it to the final destination. Now they know the URL of the final endpoint where the promotion is. They could share that URL on Twitter or Reddit, for example, and now others could go there directly. Note that Seal Brewing probably does not have to be overly concerned with this potential problem. The sharer would have to be influential and the event long-lived such that other users could actually find out about that shared URL. In any case, to prevent users from circumventing the waiting room we have a third endpoint on the API Gateway that we call the "/client" endpoint. If Seal Brewing wants, they can add a simple AJAX request to their frontend JavaScript that will send a GET request to the "/client" endpoint. The browser would send along the cookie with such a request. The logic works the same as in the "/polling" route in Step 7. A direct query of the database occurs and Seal Brewing can expect a JSON object in response with a property "allow" that contains a truthy or falsey value.
@@ -527,18 +527,12 @@
           <p>
             Since we were limited by both the frequency of the cron job (once per minute), and the size of the batch that we can poll from the SQS queue (ten messages), we decided to take a programmatic approach to increase the efficiency of our Consumer Lambda. We implemented a simple loop that runs a number of times determined from the rate Seal Brewing set in the CLI and polls a set number of messages per minute. Instead of scaling the number of Consumer Lambdas, we simply ran the same logic but now for several loops. We were already allotting ample time for our lambdas to execute so extending our loop only helped occupy otherwise wasted time. This approach was accurate as long as the number of loops needed could be completed in time before the Consumer Lambda timed out. Our Consumer Lambdas have 60 seconds to complete their work. From our testing a Consumer Lambda could complete about 150-180 loops, i.e. about 1,500 to 1,800 tokens could be pulled off the queue per minute. The problem was if Seal Brewing selected a rate higher than one Consumer Lambda could handle in 60 seconds, perhaps 3,000 a minute, unexpected behavior would occur. The first Consumer Lambda would try to complete 300 loops, time out, and then re-trigger itself. Because we also configured the Reserve Concurrency for the Consumer Lambdas based on the CLI rate set, another Consumer Lambda would spin up and also try to complete 300 loops. The result was highly inaccurate data above anything more than one Consumer Lambda could handle. This approach scaled but was inaccurate under load.
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/trigger-lambda.png" alt="Trigger lambda starts every 60 seconds by cloudwatch event">
-          </div>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/trigger-lambda-2.png" alt="Trigger lambda starts consumer lambda">
-          </div>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/trigger-lambda-3.png" alt="Consumer lambda consumes from SQS">
-          </div>
           <p>
             Our third and final approach was simpler. We introduced a new Trigger Lambda which orchestrates how many Consumer Lambdas to invoke and each Consumer Lambda loops a maximum of 100 times. For example, if Seal Brewing selects a rate of 3,300 RPM, the Trigger Lambda will invoke three Consumer Lambdas and pass an argument to each instructing them to complete 100 loops, and a fourth Consumer Lambda with an argument instructing it to do the remaining 30 loops. The Consumer Lambdas can easily finish 100 loops in 60 seconds (usually about 30 seconds). This final approach solves the problems of the first two: it is both 1) scalable, and 2) highly accurate.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/trigger-lambda-whole-flow.png" alt="Trigger lambda">
+          </div>
           <p>
             Beekeeper also allows Seal Brewing to optionally change the rate at which traffic is forwarded on the fly. We use an environmental variable on the Trigger Lambda to hold the rate and this variable can be modified.
           </p>
