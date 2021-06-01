@@ -203,7 +203,15 @@
           </div>
           <p>
             <strong>Step 7: Query DynamoDB to see if the token is in there yet.</strong>
-            This is how we decide when to let a user get redirected from the waiting room to the final destination. If the token is in the database, the API Gateway responds with an object with two properties:
+            This is how we decide when to let a user get redirected from the waiting room to the final destination. 
+          </p>
+
+          <div class="case-study-image">
+            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-7.png" alt="infrastructure diagram step 7">
+          </div>
+            
+          <p>
+              If the token is in the database, the API Gateway responds with an object with two properties:
             <pre><code>
   {
     "allow": "true",
@@ -222,41 +230,38 @@
           <p>
             and the polling continues every 20 seconds while the user waits.
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/beekeeper-infrastructure-flow/infra-flow-7.png" alt="infrastructure diagram step 7">
-          </div>
           <p>
             <strong>Step 8 (Optional): The final destination performs a check to make sure the user didn't skip the waiting room.</strong>
-            Without this step, notice how a user could technically skip the waiting room. Here's how it might happen: one user clicks on the promotional link, goes through the whole process outlined above, and makes it to the final destination. Now they know the URL of the final endpoint where the promotion is. They could share that URL on Twitter or Reddit, for example, and now others could go there directly. Note that Seal Brewing probably does not have to be overly concerned with this potential problem. The sharer would have to be influential and the event long-lived such that other users could actually find out about that shared URL. In any case, to prevent users from circumventing the waiting room we have a third endpoint on the API Gateway that we call the "/client" endpoint. If Seal Brewing wants, they can add a simple AJAX request to their frontend JavaScript that will send a GET request to the "/client" endpoint. The browser would send along the cookie with such a request. The logic works the same as in the "/polling" route in Step 7. A direct query of the database occurs and Seal Brewing can expect a JSON object in response with a property "allow" that contains a truthy or falsey value.
+            Without this step, notice how a user could technically skip the waiting room. Here's how it might happen: one user clicks on the promotional link, goes through the whole process outlined above, and makes it to the final destination. Now they know the URL of the final endpoint where the promotion is. They could share that URL on Twitter or Reddit, for example, and now others could go there directly. Note that Seal Brewing probably does not have to be overly concerned with this potential problem. The sharer would have to be influential and the event long-lived such that other users could actually find out about that shared URL. In any case, to prevent users from circumventing the waiting room we have a third endpoint on the API Gateway that we call the "/client" endpoint. If Seal Brewing wants, they can add a simple AJAX request to their frontend JavaScript that will send a GET request to the "/client" endpoint. The browser would send along the cookie with such a request. The logic works the same as in the "/polling" route in Step 7; A direct query of the database occurs and Seal Brewing can expect a JSON object in response with a property "allow" that contains a truthy or falsey value.
           </p>
 
           <h2>4. How To Use Beekeeper</h2>
           <p>
             To set up a Beekeeper waiting room, Seal Brewing must have an AWS account, set their access keys, download the AWS CLI, and have Node and NPM installed on their machine. Once those preliminary steps are finished, deploying a virtual waiting room takes just a few minutes to set up and is torn down in seconds. 
           </p>
+          <p>
+            It is possible to set up as many virtual waiting rooms. For each one, Seal Brewing will be asked six questions such as the name they want publicly displayed on the waiting room page, the AWS region where the infrastructure is deployed, the endpoint of the event, and the rate at which traffic should be sent from the waiting room to that endpoint.
+          </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/beekeeper-commands/beekeeper-init.png" alt="beekeeper init command">
           </div>
           <p>
-            It is possible to set up as many virtual waiting rooms. For each one, Seal Brewing will be asked six questions such as the name they want publicly displayed on the waiting room page, the AWS region where the infrastructure is deployed, the endpoint of the event, and the rate at which traffic should be sent from the waiting room to that endpoint.
+            Deploying the waiting room builds up all the required components and permissions. Once the build is done two URLs are generated; the waiting room URL is put in the promotional emails and social media posts and the client check endpoint can optionally be utilized by Seal Brewing to prevent people from skipping the queue.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/beekeeper-commands/beekeeper-deploy.png" alt="beekeeper deploy command">
           </div>
           <p>
-            Deploying the waiting room builds up all the required components and permissions. Once the build is done two URLs are generated; the waiting room URL is put in the promotional emails and social media posts and the client check endpoint can optionally be utilized by Seal Brewing to prevent people from skipping the queue.
+            If the waiting room is no longer needed but the advertising links are still being used the waiting room can be turned off and visitors will redirect to Seal Brewing's endpoint directly, skipping the waiting room.
           </p>
           <div class="case-study-image" >
             <img src="assets/images/case-study/beekeeper-commands/beekeeper-off.png" alt="beekeeper off command">
           </div>
-          <p>
-            If the waiting room is no longer needed but the advertising links are still being used the waiting room can be turned off and visitors will redirect to Seal Brewing's endpoint directly, skipping the waiting room.
+          <p> When finished with the waiting room entirely is can be torn down in seconds with a simple command. Detailed instructions for using Beekeeper can be found in our <a href="https://www.npmjs.com/package/beekeeper-cli" target="_blank" rel="noopener noreferrer">README</a>.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/beekeeper-commands/beekeeper-destroy.png" alt="beekeeper destroy command">
           </div>
-          <p> When finished with the waiting room entirely is can be torn down in seconds with a simple command. Detailed instructions for using Beekeeper can be found in our <a href="https://www.npmjs.com/package/beekeeper-cli" target="_blank" rel="noopener noreferrer">README</a>.
-          </p>
         
           <h2>5. Engineering Decisions and Trade-Offs</h2>
           <p>The Beekeeper team encountered a few engineering challenges and made several important decisions when designing and building the infrastructure.</p>
@@ -352,11 +357,14 @@
           <pre><code>
   https://beekeeper-sealbrew-s3.s3.us-east-2.amazonaws.com/index.html?token=7ght63
           </code></pre>
+          <p>
+            Now the client would be sitting in the waiting room with query parameters tacked onto the URL. When the client-side JS makes an AJAX request to "/polling", those query parameters would need to be sent along, too. 
+          </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/query-string-tracking.png" alt="Query string tracking">
           </div>
           <p>
-            Now the client would be sitting in the waiting room with query parameters tacked onto the URL. When the client-side JS makes an AJAX request to "/polling", those query parameters would need to be sent along, too. That can be done with client-side JavaScript like this:
+            That can be done with client-side JavaScript like this:
           </p>
           <pre><code>
   const urlParams = new URLSearchParams(window.location.search);
@@ -427,7 +435,13 @@
             The API Gateway is the origin that set the cookie in the first place. When a user first clicked on the promotional link they went to the API Gateway "/beekeeper" endpoint, which triggered a Lambda and set a cookie, and the API Gateway responded from its origin. That means the client now has a cookie on it corresponding or "belonging" to the API Gateway origin.
           </p>
           <p>
-            The client-side JS needs to be able to send an AJAX request to the API Gateway. This means origin #2 sending an in-page request to origin #1. That's a violation of the same-origin policy. To allow this CORS request, API Gateway can set the following response headers:
+            The client-side JS needs to be able to send an AJAX request to the API Gateway. This means origin #2 sending an in-page request to origin #1. That's a violation of the same-origin policy and absent specific CORS headers, will fail. 
+          </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/CORS_2.png" alt="CORS-error diagram">
+          </div>
+          <p>
+            To allow this CORS request, API Gateway can set the following response headers:
           </p>
             <pre><code>
   'Access-Control-Allow-Credentials': true,
@@ -466,9 +480,6 @@
           <p>
             For Beekeeper, this means that if a user is using Safari, either on their mobile device or their desktop, the browser will block the cross-origin request with our cookie. For it to succeed, the user must temporarily enable a setting in Safari which Apple calls "cross-site tracking." On our waiting room page, we include a short description of how users can do this. In response to the pressure Apple and Safari have put on this issue, Chrome has also announced its intention to phase out support for third-party cookies by 2022.
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/CORS_2.png" alt="CORS-error diagram">
-          </div>
           <p>
             Asking users to manually change a setting temporarily in their browser if they are using Safari is not ideal. Safari is a popular browser in a desktop setting and a popular browser in a mobile setting. iOS dominates the mobile market share and mobile market share continues to climb for all use cases, and Safari is the default browser on iOS devices. However, using the alternative query string approach to store the token had significant drawbacks as well. In the end, Beekeeper chose a cookie-based approach because with a future feature discussed below, custom domains with AWS Route53, we can easily generate URLs for the S3 and API Gateway such that they are of the same origin. With a little more work on Seal Brewing's part, the final destination can be of the same origin as well. With the URLs of the same origin, the downsides of the cookie-based approach are effectively mitigated.
           </p>
@@ -509,26 +520,26 @@
           <p>
             An integral part of our system is sending users from the waiting room to the origin at a specified rate. To achieve this we needed to finely tune the Consumer Lambdas. AWS provides several options for controlling both the number of available lambdas and the frequency they are invoked. Beekeeper tried three different approaches.
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/first_throttle.png" alt="CRON Job Throttle AWS Lambda">
-          </div>
           <p>
             Our initial approach utilized a cron job, provided by AWS CloudWatch, to trigger a single Consumer Lambda every minute. Through Simple Queue Services we were able to batch messages in groups of ten and each time a Consumer Lambda was invoked a batch of ten would be polled from the queue, written to the database, and then deleted from the queue (i.e. 1 Consumer Lambda = 10 tokens per minute off the queue). This was accurate, albeit inefficient.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/lambda_pool.png" alt="Lambda pool of 1000 concurrency limit">
+            <img src="assets/images/case-study/first_throttle.png" alt="CRON Job Throttle AWS Lambda">
           </div>
           <p>
             Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lamba pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/lambda_loop.png" alt="Consumer lambda using a for loop">
+            <img src="assets/images/case-study/lambda_pool.png" alt="Lambda pool of 1000 concurrency limit">
           </div>
           <p>
             Since we were limited by both the frequency of the cron job (once per minute), and the size of the batch that we can poll from the SQS queue (ten messages), we decided to take a programmatic approach to increase the efficiency of our Consumer Lambda. We implemented a simple loop that runs a number of times determined from the rate Seal Brewing set in the CLI and polls a set number of messages per minute. Instead of scaling the number of Consumer Lambdas, we simply ran the same logic but now for several loops. We were already allotting ample time for our lambdas to execute so extending our loop only helped occupy otherwise wasted time. This approach was accurate as long as the number of loops needed could be completed in time before the Consumer Lambda timed out. Our Consumer Lambdas have 60 seconds to complete their work. From our testing a Consumer Lambda could complete about 150-180 loops, i.e. about 1,500 to 1,800 tokens could be pulled off the queue per minute. The problem was if Seal Brewing selected a rate higher than one Consumer Lambda could handle in 60 seconds, perhaps 3,000 a minute, unexpected behavior would occur. The first Consumer Lambda would try to complete 300 loops, time out, and then re-trigger itself. Because we also configured the Reserve Concurrency for the Consumer Lambdas based on the CLI rate set, another Consumer Lambda would spin up and also try to complete 300 loops. The result was highly inaccurate data above anything more than one Consumer Lambda could handle. This approach scaled but was inaccurate under load.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/lambda_loop.png" alt="Consumer lambda using a for loop">
+          </div>
           <p>
-            Our third and final approach was simpler. We introduced a new Trigger Lambda which orchestrates how many Consumer Lambdas to invoke and each Consumer Lambda loops a maximum of 100 times. For example, if Seal Brewing selects a rate of 3,300 RPM, the Trigger Lambda will invoke three Consumer Lambdas and pass an argument to each instructing them to complete 100 loops, and a fourth Consumer Lambda with an argument instructing it to do the remaining 30 loops. The Consumer Lambdas can easily finish 100 loops in 60 seconds (usually about 30 seconds). This final approach solves the problems of the first two: it is both 1) scalable, and 2) highly accurate.
+            Our third and final approach was cleaner. We introduced a new Trigger Lambda which orchestrates how many Consumer Lambdas to invoke and each Consumer Lambda loops a maximum of 100 times. For example, if Seal Brewing selects a rate of 3,300 RPM, the Trigger Lambda will invoke three Consumer Lambdas and pass an argument to each instructing them to complete 100 loops, and a fourth Consumer Lambda with an argument instructing it to do the remaining 30 loops. The Consumer Lambdas can easily finish 100 loops in 60 seconds (usually about 30 seconds). This final approach solves the problems of the first two: it is both 1) scalable, and 2) highly accurate.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/trigger-lambda-whole-flow.png" alt="Trigger lambda">
@@ -540,12 +551,12 @@
           <p>
             Beekeeper offers an optional feature in the CLI called Dynamic Rate Throttling. This is a feature that protects Seal Brewing from accidentally choosing a rate that their endpoint cannot handle. At a high level, Beekeeper periodically pings the Seal Brewing endpoint and if the average response time degrades to something worse than three (3) standard deviations from an initial baseline check, we slow the rate down.
           </p>
-          <div class="case-study-image">
-            <img src="assets/images/case-study/auto_tune.png" alt="Dynamic Rate Throttling">
-          </div>
           <p>
             Beekeeper achieves this functionality by utilizing an extra Lamba we call the dynamic rate throttling (DRT) lambda. This extra lambda would tune the rate of our Consumer Lambda based on the latency of the client's endpoint. We modeled our DRT lambda off of a governor model introduced in <em style="text-decoration: underline;">Release It!</em> by Michael T. Nygard<sup><a href="#4">4</a></sup>.
           </p>
+          <div class="case-study-image">
+            <img src="assets/images/case-study/auto_tune.png" alt="Dynamic Rate Throttling">
+          </div>
           <p>
             Going back to our example: Seal Brewing has set up their wait room and specified a rate.  Everything is going great for the first couple of minutes but customers are taking longer than expected to checkout and now the number of concurrent users on their site is increasing and throwing the health of their servers in jeopardy.
           </p>
@@ -555,18 +566,21 @@
           <p>
             Changing the rate too far or too fast in one direction is bad. We want to avoid changing the rate to zero or increasing the rate back to an unsafe level. Our DRT lambda has built-in logic that decreases the amount it can change as it moves farther in one direction. The lambda also takes a slower approach to increasing the rate after a throttle than it does performing a throttle.
           </p>
+          <p>
+            The graph below shows how the DRT Lambda would change the rate of the Consumer Lambda (CL rate) as the latency of the endpoint surpasses a statistically derived threshold. The baseline is set by averaging the endpoint latency over a sample set of 20 requests. The upper threshold is set as three times the standard deviation of this sample set. The endpoint latency is calculated by taking another sample of twenty requests and finding their mean. In this way, we ensure that the rate won't be throttled by a few random high latency requests. When a test of the endpoint latency crosses the upper threshold the CL rate is reduced by 50%. When the endpoint latency again crosses below the upper threshold the CL rate is gradually increased at a rate of 25% of the difference from the original CL Rate and current CL rate.
+          </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/drt-graph.png" alt="Dynamic Rate Throttling Graph">
           </div>
-          <p>
-            The above graph shows how the DRT Lambda would change the rate of the Consumer Lambda (CL rate) as the latency of the endpoint surpasses a statistically derived threshold. The baseline is set by averaging the endpoint latency over a sample set of 20 requests. The upper threshold is set as three times the standard deviation of this sample set. The endpoint latency is calculated by taking another sample of twenty requests and finding their mean. In this way, we ensure that the rate won't be throttled by a few random high latency requests. When a test of the endpoint latency crosses the upper threshold the CL rate is reduced by 50%. When the endpoint latency again crosses below the upper threshold the CL rate is gradually increased at a rate of 25% of the difference from the original CL Rate and current CL rate.
-          </p>
           <h3>5.9 Load Testing</h3>
+          <p>
+            Load testing a deployed waiting room infrastructure posed a unique set of challenges.  Our project relies heavily on the capacity and elasticity of AWS. To fully test our deployment we would need to load test at levels approaching the capacity of AWS components. This is not an easy feat seeing as those limits could approach 10,000 queries per second. Using an open-source load testing package (artillery.io) and four different computers we were able to simulate around 140 requests per second. 
+          </p>
           <div class="case-study-image">
             <img src="./assets/images/case-study/load_test.png" alt="Load Testing Beekeeper">
           </div>
           <p>
-            Load testing a deployed waiting room infrastructure posed a unique set of challenges.  Our project relies heavily on the capacity and elasticity of AWS. To fully test our deployment we would need to load test at levels approaching the capacity of AWS components. This is not an easy feat seeing as those limits could approach 10,000 queries per second. Using an open-source load testing package (artillery.io) and four different computers we were able to simulate around 140 requests per second. From this amount, we were able to extrapolate. Most of AWS's services have inherent upper limits at some point. For example, the API Gateway has a limit of 10,000 RPS and the S3 bucket has a maximum of 5,500 GET RPS. Similarly, the SQS has a near unlimited throughput. There is no reason to test those. Lambdas, however, are limited to 1,000 per region. Our specific area of inquiry was to figure out what level of traffic would max out the Lambdas.
+            From this amount, we were able to extrapolate. Most of AWS's services have inherent upper limits at some point. For example, the API Gateway has a limit of 10,000 RPS and the S3 bucket has a maximum of 5,500 GET RPS. Similarly, the SQS has a near unlimited throughput. There is no reason to test those. Lambdas, however, are limited to 1,000 per region. Our specific area of inquiry was to figure out what level of traffic would max out the Lambdas.
           </p>
           <p>
             The results of our load test over a period of 8 minutes show that the Producer Lambda has an average total duration time of roughly 160 milliseconds. This duration time consists of both the cold start time and the lambda invocation time. A lambda cold start happens when AWS needs to provision a container so that it can execute a lambda function and this happens on the first request that comes in after deployment or in the case when all the other containers are being used and there are no other available ones.
