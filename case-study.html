@@ -429,7 +429,7 @@
             Often, there are legitimate reasons for submitting such requests and browsers now accept Cross-Origin Resource Sharing (CORS) as a standardized way around the same-origin policy. CORS allows servers to decide who can make cross-origin requests to it and what those requests can look like. This is done via the HTTP request and response headers. The browser and the server use these headers to communicate how cross-origin requests should be handled. The server uses the response headers to tell the browser which clients can access its API, which HTTP methods and HTTP headers are allowed, and whether cookies are allowed in the request<sup><a href="#5">5</a></sup>.
           </p>
           <div class="case-study-image">
-            <img src="assets/images/case-study/manning.jpeg" alt="manning jpeg">
+            <img src="assets/images/case-study/manning_duplicate.png" alt="manning">
           </div>
           <p>
             The API Gateway is the origin that set the cookie in the first place. When a user first clicked on the promotional link they went to the API Gateway "/beekeeper" endpoint, which triggered a Lambda and set a cookie, and the API Gateway responded from its origin. That means the client now has a cookie on it corresponding or "belonging" to the API Gateway origin.
