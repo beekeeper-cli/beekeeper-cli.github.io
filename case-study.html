@@ -606,16 +606,33 @@
           </p>
           <h3>5.11 How Much Traffic Can Beekeeper Handle?</h3>
           <p>
-            In summary, Beekeeper can handle about 5,500 requests per second coming in based on the S3 Bucket bottleneck and we found this to be an appropriate number for our desired use case. How fast can Seal Brewing specify they would like traffic forwarded? It depends. If Seal Brewing specifies 270,000 RPM we need to divide by 1,000 to get 270 Consumer Lambdas needed. A Consumer Lambda can handle 1,000 RPM (we capped at 100 loops doing 10 each loop). 1,000 Lambdas minus 270 leaves 730 for the Producer Lambda. We know each Producer Lambda can do 6.25 requests per second based on the 160ms average duration which is 375 RPM (6.25 x 60). For 270,000 RPM outgoing to be possible the system needs to handle at least that fast of a rate on the way in. 270,000 RPM / 375 per minute equals 720 Producer Lambdas needed to handle the traffic in. 720 Producer Lambdas plus 270 Consumer Lambdas = 990 total Lambdas. Beekeeper also uses one Trigger Lambda and one DRT Lamba. 1,000 minus 992 used means we have 8 remaining lambdas as a buffer in that scenario.
+            This is an important question, but it is involved and highly fact-specific because there are several variables in play. There are three main numbers to think about when discussing Beekeeper's traffic "capacity."
+          </p>
+          <h4>5.11.1 Incoming Traffic Capacity (hardware limit)</h4>
+          <p>
+            Beekeeper can handle about 5,500 RPS coming in. This is based on the S3 Bucket hardware limit.
+          </p>
+          <h4>5.11.2 Outgoing Traffic Capacity (hardware limit)</h4>
+          <p>
+            This is dependent on the Lambdas. We need Producer Lambdas for incoming traffic and Consumer Lambdas for pulling off the queue. We only have 1,000 Lambdas to work with per AWS. This question asks, how fast can Seal Brewing specify, as a rate in the CLI, that they would like traffic forwarded? It depends, and it involves math and assumptions about the scenario. The theoretical maximum Seal Brewing could set for the rate would be about 270,000 RPM.
           </p>
           <p>
-            Therefore, the maximum rate that Seal Brewing could select in the CLI, under any scenario, is about 270,000 RPM, i.e. 4,500 RPS. 4,500 RPS is nearly as fast as Beekeeper itself can handle. It's extremely unlikely that anyone would want traffic forwarded this fast.
+            That number can be derived as follows. We start with the understanding that for 270,000 RPM outgoing to be possible the system needs to handle at least that fast of a rate on the way in. Given 270,000 RPM outgoing, would we have enough Producer Lambdas left to handle that rate incoming?
           </p>
+          <ul>
+            <li>270,000 RPM / 1,000 = 270 Consumer Lambdas required for the <strong>outgoing</strong>. Remember, a Consumer Lambda can handle 1,000 RPM because we capped it at 100 loops doing 10 each loop. Technically, they could handle more loops, therefore, this isn't strictly a hardware limit; it's partially a design choice as well.</li>
+            <li>A Producer Lambda can do 6.25 requests per second based on the 160ms average duration which is 375 RPM (6.25 x 60).</li>
+            <li>270,000 RPM / 375 per minute = 720 Producer Lambdas needed to handle the traffic in.</li>
+            <li>720 Producer Lambdas + 270 Consumer Lambdas = 990 total Lambdas.</li>
+            <li>AWS allows us a total of 1,000 Lambdas. 1000 - 990 = 10 extra.</li>
+            <li>Beekeeper also uses one Trigger Lambda and one DRT Lamba. 10 - 2 = 8 extra as a buffer.</li>
+          </ul>
           <p>
-            What if Seal Brewing had a popular event that maxed out Beekeeper at 5,500 RPS coming in? What's the fastest they could forward that traffic at to their endpoint? 880 Producer Lambdas would be needed to handle 5,500 RPS coming. That leaves 220 remaining for the Consumer Lambdas, minus two for the Trigger Lambda and DRT Lambda (218). We know each Consumer Lambda can pull 1,000 tokens a minute, therefore 218,000 RPM minute or about 2,000 RPS is the maximum rate Seal Brewing could set in the CLI. Our team cannot anticipate realistic use cases ever wanting traffic forwarded that fast.
+            Conclusion: This works and we have enough Lambdas. The maximum rate that Seal Brewing could select in the CLI, under any scenario, is about 270,000 RPM, i.e. 4,500 RPS. 4,500 RPS is nearly as fast as Beekeeper itself can handle. It's extremely unlikely that anyone would want traffic forwarded this fast. We can do similar math but with different starting assumptions, for example, the assumption that Seal Brewing is maxing out the incoming traffic rate of 5,500 and then finding the maximum outgoing rate that can be specified.
           </p>
+          <h4>5.11.3 Overall Capacity (design choice limit)</h4>
           <p>
-            The best way to describe Beekeeper's limits would be to start with the knowledge that it can handle 5,550 RPS coming in. Then realize that the polling occurs every twenty seconds. If 200,000 site visitors are queued and polling, that's 10,000 RPS to the API Gateway just for the polling, which is its maximum.
+            This relates to how many people can be queued at one time in the Beekeeper waiting room. Despite the hardware capacities for traffic flowing in and traffic flowing out, the best way to find Beekeeper's limits is to realize that the polling occurs every twenty seconds. If 200,000 site visitors are queued and polling, that's 10,000 RPS to the API Gateway just for the polling, which is its maximum. This leads us to a different kind of capacity; not traffic rate in or out, but rather standing room capacity in the waiting room.
           </p>
           <p>
             How fast site visitors accumulate in the waiting room depends on how fast they are coming in, and how fast Seal Brewing has said they can be forwarded. If Seal Brewing approaches 200,000 waiting room visitors in a short period of time they are starting to hit the limit of our current implementation. Of course, it's a single line of code to change the polling from every 20 seconds to every minute which would increase the 200,000 waiting room polling limit to 600,000 queued site visitors. We chose every 20 second polling because 200,000 queued waiting room visitors is an appropriate target use case and a better user experience for the queued customers.
