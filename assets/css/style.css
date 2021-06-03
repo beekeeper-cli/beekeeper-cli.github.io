@@ -1460,6 +1460,7 @@ a:hover {
   position: relative;
   right: 130px;
   width: 710px;
+  box-shadow: black 0px 2px 15px;
 }
 
 .primary-button {
