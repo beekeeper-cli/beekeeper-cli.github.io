@@ -1501,6 +1501,7 @@ a:hover {
   text-decoration: none;
   text-transform: uppercase;
   font-weight: 600;
+  text-align: center;
 }
 
 .primary-button.right-margin {
