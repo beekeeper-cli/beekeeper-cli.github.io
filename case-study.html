@@ -642,11 +642,11 @@
           </p>
           <p>
             <strong>S3 Bucket (incoming traffic rate).</strong>
-            The S3 bucket has a hardware limitation of 5,500 GET RPS. As mentioned, it would be feasible to create multiple buckets with identical static assets and distribute incoming traffic from the API Gateway amongst them. In other words, horizontally scale the S3 bucket.
+            The S3 bucket has a hardware limitation of 5,500 GET RPS. It would be feasible to create multiple buckets with identical static assets and distribute incoming traffic from the API Gateway amongst them. In other words, horizontally scale the S3 bucket.
           </p>
           <p>
             <strong>Lambdas (both incoming and outgoing traffic rate).</strong>
-            The default concurrency limit is 1,000 lambdas per AWS region. As discussed, this equates to a 6,250 RPS limit on incoming traffic and also affects the outgoing traffic rate. This 1,000 concurrency limit is a soft limit and can be increased, for free, by contacting Amazon. How much this can be increased by is not known, but ancedotal reports mention five-fold increases for free. This is again an example of more horizontal scaling. It's also worth noting, again, that our current Consumer Lambda code only utilizes approximately 50% of the time we allocate to them; it only takes about 30 seconds for each of them to complete their 100 loops. We could squeeze more loops out of them and complete more work.
+            The default concurrency limit is 1,000 lambdas per AWS region. As discussed, this equates to a 6,250 RPS limit on incoming traffic and also affects the outgoing traffic rate. This 1,000 concurrency limit is a soft limit and can be increased, for free, by contacting Amazon. How much this can be increased by is not known, but ancedotal reports mention five-fold increases for free. This is again an example of more horizontal scaling. It's also worth noting that our current Consumer Lambda code only utilizes approximately 50% of the time we allocate to them; it only takes about 32 seconds for each of them to complete their 100 loops. We could squeeze more loops out of them and complete more work.
           </p>
           <p>
             <strong>API Gateway (standing room capacity).</strong>
