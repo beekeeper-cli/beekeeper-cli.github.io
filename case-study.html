@@ -273,7 +273,7 @@
             For example, with AWS CloudFront, you can put a static asset in an S3 bucket and create a CloudFront distribution for it. Now the asset no longer resides on a server in a single geographic location like "us-east-1.," which is in Virginia. Instead, identical versions of the asset live in many locations across the globe. When a user makes an HTTP request for it, the asset is served from the lowest latency location, typically the location closest to the request. Without edge optimization, a request from Los Angeles might take 70ms to get to a server in Amazon's "us-east-1" region and set up a TCP handshake, and another 70ms for the actual round trip of data back in response. If the asset is distributed to a location very close to the user it might take 10ms or less. For example, a round trip ping from Los Angeles to San Diego could be as fast as 4ms for the TCP handshake and another request/response cycle for the actual data.<sup><a href="#2">2</a></sup>
           </p>
           <p>
-            In addition to serving static assets on the edge, many cloud providers, including Amazon, provide the ability to do computation on the edge above and beyond serving static assets like an HTML page. Specifically, a function can be distributed and executed in various geographic locations through Amazon's Lamba@edge service.
+            In addition to serving static assets on the edge, many cloud providers, including Amazon, provide the ability to do computation on the edge above and beyond serving static assets like an HTML page. Specifically, a function can be distributed and executed in various geographic locations through Amazon's Lambda@edge service.
           </p>
           <p>
             Should the Beekeeper virtual waiting room be edge optimized? The initial temptation is certainly to edge optimize it. Let's assume the waiting room loads in under 50ms for everyone with edge optimization as compared to say 500-1000ms for a far-flung end-user trying to hit a centrally located server. Has anything of significance been achieved with edge optimization in that scenario? Reducing latency with edge optimization is great for a lot of use cases, but it doesn't seem to be useful here. The goal of a virtual waiting room is to intercept and diffuse a burst of traffic. Client-side JS polls every 20 seconds and when the user's token is written to the database they can proceed to the final destination. This user might be waiting for many seconds or many minutes. There is no discernible benefit for a site visitor that can get the waiting room loaded in 50ms versus 500ms.
@@ -305,7 +305,7 @@
           </div>
           <h4>5.2.1 <code>/beekeeper</code></h4>
           <p>
-            Lambas have an option to be triggered as a proxy integration. Choosing a proxy integration means that API Gateway will forward the unmodified request in its entirety to the Lambda code. Not choosing proxy integration means that the API Gateway can make modifications to the request, such as creating and transforming data, and then sending that modified data to the Lambda. We use proxy integration and trigger a Lambda (Producer Lambda) for new users hitting the initial endpoint. The Producer Lambda checks the incoming request's headers for the existence of the cookie and if it's not present, the Producer Lambda generates a token and creates a response header setting a cookie with that token in it. The Producer Lambda then sets other headers relating to Content-Type, Location, and various Access-Control-Allow headers. The Producer Lambda also sets the response status code to 302 indicating a redirect. Once this custom object is formed, the Producer Lambda responds to API Gateway with it via the proxy integration and API Gateway in turn responds to the client causing a redirect to the waiting room URL which is an endpoint representing the static asset in S3.
+            Lambdas have an option to be triggered as a proxy integration. Choosing a proxy integration means that API Gateway will forward the unmodified request in its entirety to the Lambda code. Not choosing proxy integration means that the API Gateway can make modifications to the request, such as creating and transforming data, and then sending that modified data to the Lambda. We use proxy integration and trigger a Lambda (Producer Lambda) for new users hitting the initial endpoint. The Producer Lambda checks the incoming request's headers for the existence of the cookie and if it's not present, the Producer Lambda generates a token and creates a response header setting a cookie with that token in it. The Producer Lambda then sets other headers relating to Content-Type, Location, and various Access-Control-Allow headers. The Producer Lambda also sets the response status code to 302 indicating a redirect. Once this custom object is formed, the Producer Lambda responds to API Gateway with it via the proxy integration and API Gateway in turn responds to the client causing a redirect to the waiting room URL which is an endpoint representing the static asset in S3.
           </p>
           <h4>5.2.2 <code>/polling </code> and <code> /client</code></h4>
           <p>
@@ -527,7 +527,7 @@
             <img src="assets/images/case-study/first_throttle.png" alt="CRON Job Throttle AWS Lambda">
           </div>
           <p>
-            Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lamba pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
+            Any increase in the Consumer Lambda rate would also increase the number of lambdas. AWS has a regional concurrency limit of 1000 lambdas.  Every Consumer Lambda provisioned reduces the number of available lambdas for the Producer Lambda pool. Reducing our Producer Lambda pool effectively lowers the overall capacity that our waiting room can handle. As an example, if Seal Brewing specified in the CLI that they wanted traffic forwarded to them at 5,000 RPM, 500 Consumer Lambdas (50% of total available) would be needed just for pulling tokens off the queue. This approach does not scale.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/lambda_pool.png" alt="Lambda pool of 1000 concurrency limit">
@@ -552,7 +552,7 @@
             Beekeeper offers an optional feature in the CLI called Dynamic Rate Throttling. This is a feature that protects Seal Brewing from accidentally choosing a rate that their endpoint cannot handle. At a high level, Beekeeper periodically pings the Seal Brewing endpoint and if the average response time degrades to something worse than three (3) standard deviations from an initial baseline check, we slow the rate down.
           </p>
           <p>
-            Beekeeper achieves this functionality by utilizing an extra Lamba we call the dynamic rate throttling (DRT) lambda. This extra lambda would tune the rate of our Consumer Lambda based on the latency of the client's endpoint. We modeled our DRT lambda off of a governor model introduced in <em style="text-decoration: underline;">Release It!</em> by Michael T. Nygard<sup><a href="#9">9</a></sup>.
+            Beekeeper achieves this functionality by utilizing an extra Lambda we call the dynamic rate throttling (DRT) lambda. This extra lambda would tune the rate of our Consumer Lambda based on the latency of the client's endpoint. We modeled our DRT lambda off of a governor model introduced in <em style="text-decoration: underline;">Release It!</em> by Michael T. Nygard<sup><a href="#9">9</a></sup>.
           </p>
           <div class="case-study-image">
             <img src="assets/images/case-study/auto_tune.png" alt="Dynamic Rate Throttling">
@@ -586,7 +586,7 @@
             The results of our load test over a period of 8 minutes show that the Producer Lambda has an average total duration time of roughly 160 milliseconds. This duration time consists of both the cold start time and the lambda invocation time. A lambda cold start happens when AWS needs to provision a container so that it can execute a lambda function and this happens on the first request that comes in after deployment or in the case when all the other containers are being used and there are no other available ones.
           </p>
           <p>
-            Once we identified the Producer Lambda's average total duration time of 160ms, we were able to estimate that the number of times the lambda can execute per second is around 6.25 (1,000 / 160). This means that if the maximum number of concurrent lambdas allowed is 1000, then the maximum requests per second Beekeeper can handle before it uses up all the available lambdas is 6,250 RPS (assuming no Producer Lambdas).
+            Once we identified the Producer Lambda's average total duration time of 160ms, we were able to estimate that the number of times the lambda can execute per second is around 6.25 (1,000 / 160). This means that if the maximum number of concurrent lambdas allowed is 1000, then the maximum requests per second Beekeeper can handle before it uses up all the available lambdas is 6,250 RPS (*theoretical limit: assuming no Consumer Lambdas).
           </p>
           <h3>5.10 Bottlenecks</h3>
           <p>
@@ -601,28 +601,65 @@
           <div class="case-study-image">
             <img src="./assets/images/case-study/bottleneck.png" alt="Beekeeper Bottlenecks">
           </div>
-          <p>
-            To unblock the Producer Lambda bottleneck, Seal Brewing can simply contact Amazon to raise its lambda concurrency limit free of charge. How much this can be raised remains unclear but anecdotal reports exist for raising the amount by 3-5x free of charge. To unblock the S3 bucket bottleneck, we can distribute the requests and s3 objects to multiple prefixes or multiple S3 buckets. A prefix is any string between the bucket name and an s3 object name.
-          </p>
           <h3>5.11 How Much Traffic Can Beekeeper Handle?</h3>
           <p>
-            In summary, Beekeeper can handle about 5,500 requests per second coming in based on the S3 Bucket bottleneck and we found this to be an appropriate number for our desired use case. How fast can Seal Brewing specify they would like traffic forwarded? It depends. If Seal Brewing specifies 270,000 RPM we need to divide by 1,000 to get 270 Consumer Lambdas needed. A Consumer Lambda can handle 1,000 RPM (we capped at 100 loops doing 10 each loop). 1,000 Lambdas minus 270 leaves 730 for the Producer Lambda. We know each Producer Lambda can do 6.25 requests per second based on the 160ms average duration which is 375 RPM (6.25 x 60). For 270,000 RPM outgoing to be possible the system needs to handle at least that fast of a rate on the way in. 270,000 RPM / 375 per minute equals 720 Producer Lambdas needed to handle the traffic in. 720 Producer Lambdas plus 270 Consumer Lambdas = 990 total Lambdas. Beekeeper also uses one Trigger Lambda and one DRT Lamba. 1,000 minus 992 used means we have 8 remaining lambdas as a buffer in that scenario.
+            As with any infrastructure, Beekeeper has constraints and those are imposed both by built-in limits from specific AWS services and Beekeeper’s design pattern. Finding the answer to our traffic capacity defines our current use case, and it can provide insight into how Beekeeper could be scaled further. Therefore, it is an important question, but it is involved and highly fact-specific because there are several variables in play. There are three primary numbers to think about when discussing Beekeeper's traffic "capacity": 1. incoming traffic rate to the waiting room, 2. outgoing traffic rate from the waiting room to the final destination, and 3. standing room capacity in the waiting room.
           </p>
           <p>
-            Therefore, the maximum rate that Seal Brewing could select in the CLI, under any scenario, is about 270,000 RPM, i.e. 4,500 RPS. 4,500 RPS is nearly as fast as Beekeeper itself can handle. It's extremely unlikely that anyone would want traffic forwarded this fast.
+            Beekeeper is constrained by the requests its individual  components can handle. Recall that lambdas are responsible for both #1 and #2 above; scaling up to handle incoming traffic and taking tokens of the queue. Standing rooom capacity is dependent upon the capacity of the API Gateway as explained below.
+          </p>
+          <h4>5.11.1 Incoming Traffic Capacity</h4>
+          <p>
+            Beekeeper can handle about 5,500 RPS coming in. This is the S3 Bucket hardware limit, which has the lowest throughput limit of any of our AWS services. Close behind that is the 6,250 RPS limit imposed by the lambdas and discussed above.
+          </p>
+          <h4>5.11.2 Outgoing Traffic Capacity</h4>
+          <p>
+            As mentioned, this is dependent on the lambdas. We need Producer Lambdas for incoming traffic and Consumer Lambdas for pulling off the queue. We only have 1,000 lambdas to work with per AWS region. This question asks, how fast can Seal Brewing specify, as a rate in the CLI, that they would like traffic forwarded? It depends, and it involves math and assumptions about the scenario. The theoretical maximum Seal Brewing could set for the rate would be about 270,000 RPM.
           </p>
           <p>
-            What if Seal Brewing had a popular event that maxed out Beekeeper at 5,500 RPS coming in? What's the fastest they could forward that traffic at to their endpoint? 880 Producer Lambdas would be needed to handle 5,500 RPS coming. That leaves 220 remaining for the Consumer Lambdas, minus two for the Trigger Lambda and DRT Lambda (218). We know each Consumer Lambda can pull 1,000 tokens a minute, therefore 218,000 RPM minute or about 2,000 RPS is the maximum rate Seal Brewing could set in the CLI. Our team cannot anticipate realistic use cases ever wanting traffic forwarded that fast.
+            That number can be derived as follows. We start with the understanding that for 270,000 RPM outgoing to be possible the system needs to handle at least that fast of a rate on the way in. Given 270,000 RPM outgoing, would we have enough Producer Lambdas left to handle that rate incoming?
+          </p>
+          <div class="case-study-image">
+            <img src="./assets/images/case-study/lambdamath.png" alt="math proof">
+          </div>
+          <p>
+            Conclusion: This works and we have enough lambdas. The maximum rate that Seal Brewing could select in the CLI, under any scenario, is about 270,000 RPM, i.e. 4,500 RPS. It's extremely unlikely that anyone would want traffic forwarded this fast.
+          </p>
+          <h4>5.11.3 Standing Room Capacity</h4>
+          <p>
+            We've established that a lot of traffic can flow into the waiting room and a lot of traffic can flow out from it. Consider a case in which incoming traffic to the waiting room far outpaces outgoing traffic to the endpoint. A large number of concurrent users will accumulate in the waiting room. Each concurrent user in the waiting room must send a request to the API Gateway to check on their status. A hypothetical case where the waiting room has 200,000 concurrent users will overwhelm the API Gateway’s stated capacity.
+          </p>
+          <div class="case-study-image">
+            <img src="./assets/images/case-study/pollingbottlenecktable.png" alt="math table">
+          </div>
+          <p>
+            We chose every 20-second polling because 200,000 queued waiting room visitors is an appropriate target use case, and more frequent polling is a better user experience for the queued customers. In conclusion, while not suitable for the largest of events, Beekeeper is certainly not limited to just small events, either. It is a robust open-sourced solution that does what it set out to do.
+          </p>
+          <h3>5.12 Scaling Beyond Beekeeper's Current Design</h3>
+          <h4>5.12.1 Scaling a Single Beekeeper Deployment</h4>
+          <p>
+            Now that we've established the current use case, how might we approach scaling Beekeeper for even larger events? The first step might be to squeeze more capacity from a current infrastructure deployment. 
           </p>
           <p>
-            The best way to describe Beekeeper's limits would be to start with the knowledge that it can handle 5,550 RPS coming in. Then realize that the polling occurs every twenty seconds. If 200,000 site visitors are queued and polling, that's 10,000 RPS to the API Gateway just for the polling, which is its maximum.
+            <strong>S3 Bucket (incoming traffic rate).</strong>
+            The S3 bucket has a hardware limitation of 5,500 GET RPS. It would be feasible to create multiple buckets with identical static assets and distribute incoming traffic from the API Gateway amongst them. In other words, horizontally scale the S3 bucket.
           </p>
           <p>
-            How fast site visitors accumulate in the waiting room depends on how fast they are coming in, and how fast Seal Brewing has said they can be forwarded. If Seal Brewing approaches 200,000 waiting room visitors in a short period of time they are starting to hit the limit of our current implementation. Of course, it's a single line of code to change the polling from every 20 seconds to every minute which would increase the 200,000 waiting room polling limit to 600,000 queued site visitors. We chose every 20 second polling because 200,000 queued waiting room visitors is an appropriate target use case and a better user experience for the queued customers.
+            <strong>Lambdas (both incoming and outgoing traffic rate).</strong>
+            The default concurrency limit is 1,000 lambdas per AWS region. As discussed, this equates to a 6,250 RPS limit on incoming traffic and also affects the outgoing traffic rate. This 1,000 concurrency limit is a soft limit and can be increased, for free, by contacting Amazon. How much this can be increased by is not known, but ancedotal reports mention five-fold increases for free. This is again an example of more horizontal scaling. It's also worth noting that our current Consumer Lambda code only utilizes approximately 50% of the time we allocate to them; it only takes about 32 seconds for each of them to complete their 100 loops. We could squeeze more loops out of them and complete more work.
           </p>
           <p>
-            In conclusion, while not suitable for the largest of events like a Sony Playstation release, Beekeeper is certainly not limited to just small events, either. It is a robust open-sourced solution that does what it set out to do.
+            <strong>API Gateway (standing room capacity).</strong>
+            In the case of the API Gateway, we could poll it less often, perhaps every minute instead of every 20 seconds. That's a single line of code to increase the standing room capacity from 200,000 to 600,000. We could also look into implementing WebSockets to prevent wasteful HTTP request/response cycles, but of course that would simply move the bottleneck to other hardware required to maintain all those open connections.
           </p>
+          <h4>5.12.2 An Elegant Solution: Multiple Regional Beekeeper Deployments</h4>
+          <p>
+            Now we are faced with an important design decision. At some point, do we continue patching our infrastructure as new bottlenecks arise or is there a more elegant approach? One existing solution might be to use an Elastic Load Balancer in front of separate regional wait room deployments, i.e. an entire Beekeeper infrastructure in "us-east-1" and another in "us-east-2", etc. In this way, the traffic from an event capable of overloading a single Beekeeper deployment is distributed, reducing the burden of a single waiting room. Scaling our design pattern horizontally is all that is required to jump from our current use case to larger, globally distributed events.
+          </p>
+          <div class="case-study-image">
+            <img src="./assets/images/case-study/load_balanced_final.png" alt="load balanced infra">
+          </div>
+          <p>
           <h2>6. Future Features</h2>
           <h3>6.1 Branded Waiting Room Experience</h3>
           <p>
